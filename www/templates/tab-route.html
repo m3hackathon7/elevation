@@ -10,8 +10,12 @@
     </div>
     <div class="padding">
       <button ng-click="route.search()" class="button button-block button-positive">Search</button>
-      <ul>
     </div>
+
+    <div class="padding">
+      <x-google-map class="route-map"></x-google-map>
+    </div>
+
     <div class="list" ng-repeat="leg in route.route.legs">
       <div class="item item-divider">
         {{leg.duration.text}}, {{leg.distance.text}}

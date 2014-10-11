@@ -16,4 +16,11 @@
   <feature name="StatusBar">
     <param name="ios-package" value="CDVStatusBar" onload="true"/>
   </feature>
+
+  <!-- Google Maps -->
+  <access origin="http://maps.google.com" subdomains="true"/>
+  <access origin="http://googleapis.com" subdomains="true"/>
+  <access origin="http://gstatic.com" subdomains="true"/>
+  <preference name="permissions" value="none"/>
+  <feature name="http://api.phonegap.com/1.0/geolocation"/>
 </widget>

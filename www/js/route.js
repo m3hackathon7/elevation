@@ -42,4 +42,20 @@ angular.module('starter.route', [])
     var lng = numberFilter(latlng.lng, 4);
     return ['(', lat, ',', lng, ')'].join('')
   };
+})
+
+.directive('googleMap', function() {
+  return {
+    restrict: 'E',
+    link: function(scope, element, attrs) {
+      var latlng = new google.maps.LatLng(35.6808, 139.7669);
+      var options = {
+        zoom: 14,
+        center: latlng,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      };
+      var map = new google.maps.Map(element[0], options);
+      var marker = new google.maps.Marker({ position: latlng, map: map });
+    }
+  };
 });
