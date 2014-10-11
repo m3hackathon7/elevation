@@ -19,7 +19,7 @@
       <label class="item" ng-repeat="step in leg.steps">
         {{step.duration.text}}, {{step.distance.text}}
         <br>
-        {{step.start_location}} =&gt; {{step.end_location}}
+        {{step.start_location | latlng}} -&gt; {{step.end_location | latlng}}
         <br>
         <span ng-bind-html="step.html_instructions"></span>
       </label>

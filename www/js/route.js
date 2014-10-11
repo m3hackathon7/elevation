@@ -34,4 +34,12 @@ angular.module('starter.route', [])
   return {
     search: search
   };
+})
+
+.filter('latlng', function(numberFilter) {
+  return function(latlng) {
+    var lat = numberFilter(latlng.lat, 4);
+    var lng = numberFilter(latlng.lng, 4);
+    return ['(', lat, ',', lng, ')'].join('')
+  };
 });
