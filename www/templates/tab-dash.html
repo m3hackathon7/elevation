@@ -10,7 +10,19 @@
     </div>
     <div class="padding">
       <button ng-click="dash.search()" class="button button-block button-positive">Search</button>
-      <pre>{{dash.routes}}</pre>
+      <ul>
+    </div>
+    <div class="list" ng-repeat="leg in dash.route.legs">
+      <div class="item item-divider">
+        {{leg.duration.text}}, {{leg.distance.text}}
+      </div>
+      <label class="item" ng-repeat="step in leg.steps">
+        {{step.duration.text}}, {{step.distance.text}}
+        <br>
+        {{step.start_location}} =&gt; {{step.end_location}}
+        <br>
+        <span ng-bind-html="step.html_instructions"></span>
+      </label>
     </div>
   </ion-content>
 </ion-view>

@@ -35,8 +35,8 @@ angular.module('starter.services', [])
       sensor: false
     };
     return $http.get(url, { params: params })
-      .success(function(response) {
-        return response.data.routes;
+      .then(function(response) {
+        return response.data.routes[0];
       });
   }
 

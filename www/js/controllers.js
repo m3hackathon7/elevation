@@ -5,10 +5,14 @@ angular.module('starter.controllers', [])
 
   self.search = function() {
     Routes.search(self.from, self.to)
-      .then(function(routes) {
-        $log.debug(routes);
-        self.routes = routes;
+      .then(function(route) {
+        $log.debug(route);
+        self.route = route;
       });
+  };
+
+  self.hasRoute = function() {
+    return !!self.route;
   };
 })
 
