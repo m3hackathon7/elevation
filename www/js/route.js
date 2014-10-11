@@ -1,6 +1,6 @@
 angular.module('starter.route', [])
 
-.controller('RouteCtrl', function($scope, $log, Routes) {
+.controller('RouteCtrl', function($scope, $log, $ionicPopup, Routes) {
   var self = this;
 
   self.search = function() {
@@ -13,6 +13,24 @@ angular.module('starter.route', [])
 
   self.hasRoute = function() {
     return !!self.route;
+  };
+
+  self.showSearchPopup = function() {
+    $ionicPopup.show({
+      templateUrl: 'templates/route-search-popup.html',
+      title: 'Search',
+      scope: $scope,
+      buttons: [
+        { text: 'Cancel' },
+        {
+          text: 'Search',
+          type: 'button-positive',
+          onTap: function() {
+            self.search();
+          }
+        }
+      ]
+    });
   };
 })
 
@@ -50,20 +68,31 @@ angular.module('starter.route', [])
     link: function(scope, element, attrs) {
       $cordovaGeolocation.getCurrentPosition()
         .then(function(position) {
-          var lat = position.coords.latitude;
-          var lng = position.coords.longitude;
-          var currentPosition = new google.maps.LatLng(lat, lng);
-
-          var options = {
-            zoom: 14,
-            center: currentPosition,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
-          };
-          var map = new google.maps.Map(element[0], options);
-          var marker = new google.maps.Marker({ position: currentPosition, map: map });
+          showMap(position);
         }, function(error) {
           $log.error(error);
         });
+
+      function showMap(position) {
+        var currentPosition = positionToLatLng(position);
+
+        var options = {
+          zoom: 14,
+          center: currentPosition,
+          mapTypeId: google.maps.MapTypeId.ROADMAP
+        };
+        var map = new google.maps.Map(element[0], options);
+        var marker = new google.maps.Marker({
+          position: currentPosition,
+          map: map
+        });
+      }
+
+      function positionToLatLng(position) {
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        return new google.maps.LatLng(lat, lng);
+      }
     }
   };
 });

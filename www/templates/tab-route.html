@@ -1,17 +1,8 @@
 <ion-view title="Route">
+  <ion-nav-buttons side="right">
+    <button ng-click="route.showSearchPopup()" class="button icon ion-search"></button>
+  </ion-nav-buttons>
   <ion-content>
-    <div class="list">
-      <label class="item item-input">
-        <input ng-model="route.from" type="text" placeholder="From">
-      </label>
-      <label class="item item-input">
-        <input ng-model="route.to" type="text" placeholder="To">
-      </label>
-    </div>
-    <div class="padding">
-      <button ng-click="route.search()" class="button button-block button-positive">Search</button>
-    </div>
-
     <div class="padding">
       <x-google-map class="route-map"></x-google-map>
     </div>
