@@ -1,18 +1,18 @@
-<ion-view title="Dashboard">
+<ion-view title="Route">
   <ion-content>
     <div class="list">
       <label class="item item-input">
-        <input ng-model="dash.from" type="text" placeholder="From">
+        <input ng-model="route.from" type="text" placeholder="From">
       </label>
       <label class="item item-input">
-        <input ng-model="dash.to" type="text" placeholder="To">
+        <input ng-model="route.to" type="text" placeholder="To">
       </label>
     </div>
     <div class="padding">
-      <button ng-click="dash.search()" class="button button-block button-positive">Search</button>
+      <button ng-click="route.search()" class="button button-block button-positive">Search</button>
       <ul>
     </div>
-    <div class="list" ng-repeat="leg in dash.route.legs">
+    <div class="list" ng-repeat="leg in route.route.legs">
       <div class="item item-divider">
         {{leg.duration.text}}, {{leg.distance.text}}
       </div>
