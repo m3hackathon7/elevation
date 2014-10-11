@@ -1,6 +1,10 @@
 angular.module('starter.route', [])
 
-.controller('RouteCtrl', function($scope, $log, $ionicPopup, Routes) {
+.controller('RouteCtrl', function($scope,
+                                  $log,
+                                  $ionicPopup,
+                                  $cordovaGeolocation,
+                                  Routes) {
   var self = this;
 
   self.search = function() {
@@ -32,6 +36,13 @@ angular.module('starter.route', [])
       ]
     });
   };
+
+  $cordovaGeolocation.getCurrentPosition()
+    .then(function(position) {
+      self.currentPosition = position;
+    }, function(error) {
+      $log.error(error);
+    });
 })
 
 .factory('Routes', function($http) {
@@ -62,30 +73,44 @@ angular.module('starter.route', [])
   };
 })
 
-.directive('googleMap', function($cordovaGeolocation, $log) {
+.directive('googleMap', function() {
   return {
     restrict: 'E',
     link: function(scope, element, attrs) {
-      $cordovaGeolocation.getCurrentPosition()
-        .then(function(position) {
-          showMap(position);
-        }, function(error) {
-          $log.error(error);
-        });
+      var map, marker;
+
+      scope.$watch(attrs.center, function(newValue, oldValue) {
+        if (!newValue) {
+          return;
+        }
+
+        if (map) {
+          moveMap(newValue);
+        } else {
+          showMap(newValue);
+        }
+      });
 
       function showMap(position) {
-        var currentPosition = positionToLatLng(position);
+        var latlng = positionToLatLng(position);
 
         var options = {
           zoom: 14,
-          center: currentPosition,
+          center: latlng,
           mapTypeId: google.maps.MapTypeId.ROADMAP
         };
-        var map = new google.maps.Map(element[0], options);
-        var marker = new google.maps.Marker({
-          position: currentPosition,
+        map = new google.maps.Map(element[0], options);
+        marker = new google.maps.Marker({
+          position: latlng,
           map: map
         });
+      }
+
+      function moveMap(position) {
+        var latlng = positionToLatLng(position);
+
+        map.panTo(latlng);
+        marker.setPosition(latlng);
       }
 
       function positionToLatLng(position) {
