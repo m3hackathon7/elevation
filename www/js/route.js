@@ -44,18 +44,26 @@ angular.module('starter.route', [])
   };
 })
 
-.directive('googleMap', function() {
+.directive('googleMap', function($cordovaGeolocation, $log) {
   return {
     restrict: 'E',
     link: function(scope, element, attrs) {
-      var latlng = new google.maps.LatLng(35.6808, 139.7669);
-      var options = {
-        zoom: 14,
-        center: latlng,
-        mapTypeId: google.maps.MapTypeId.ROADMAP
-      };
-      var map = new google.maps.Map(element[0], options);
-      var marker = new google.maps.Marker({ position: latlng, map: map });
+      $cordovaGeolocation.getCurrentPosition()
+        .then(function(position) {
+          var lat = position.coords.latitude;
+          var lng = position.coords.longitude;
+          var currentPosition = new google.maps.LatLng(lat, lng);
+
+          var options = {
+            zoom: 14,
+            center: currentPosition,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+          };
+          var map = new google.maps.Map(element[0], options);
+          var marker = new google.maps.Marker({ position: currentPosition, map: map });
+        }, function(error) {
+          $log.error(error);
+        });
     }
   };
 });
