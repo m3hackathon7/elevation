@@ -23,4 +23,33 @@ angular.module('starter.services', [])
       return friends[friendId];
     }
   }
+})
+
+.factory('Routes', function($http) {
+  var url = 'http://maps.googleapis.com/maps/api/directions/json';
+
+  function search(from, to) {
+    var params = {
+      origin: from,
+      destination: to,
+      sensor: false
+    };
+    return $http.get(url, { params: params })
+      .success(function(response) {
+        return response.data.routes;
+      });
+  }
+
+  return {
+    search: search
+  };
+})
+
+.factory('Elevations', function($http) {
+  function search(points) {
+  }
+
+  return {
+    search: search
+  };
 });

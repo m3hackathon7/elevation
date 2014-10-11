@@ -1,5 +1,16 @@
 <ion-view title="Dashboard">
-  <ion-content class="padding">
-    <h1>Dash</h1>
+  <ion-content>
+    <div class="list">
+      <label class="item item-input">
+        <input ng-model="dash.from" type="text" placeholder="From">
+      </label>
+      <label class="item item-input">
+        <input ng-model="dash.to" type="text" placeholder="To">
+      </label>
+    </div>
+    <div class="padding">
+      <button ng-click="dash.search()" class="button button-block button-positive">Search</button>
+      <pre>{{dash.routes}}</pre>
+    </div>
   </ion-content>
 </ion-view>
