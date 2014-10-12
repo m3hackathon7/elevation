@@ -13,3 +13,11 @@
 .elevation-chart-area {
   fill: rgba(0, 0, 255, 0.5);
 }
+
+.elevation-chart-axis line,
+.elevation-chart-axis path {
+  fill: none;
+  stroke: #000;
+  stroke-width: 1px;
+  shape-rendering: crisp-edges;
+}
