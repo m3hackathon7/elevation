@@ -3,7 +3,7 @@
     <button ng-click="route.showSearchPopup()" class="button icon ion-search"></button>
   </ion-nav-buttons>
   <ion-content>
-    <x-google-map class="route-map" center="route.currentPosition" route=""></x-google-map>
+    <ev-google-map class="route-map" center="route.currentPosition" route="route.route"></ev-google-map>
 
     <div class="list" ng-repeat="leg in route.route.legs">
       <div class="item item-divider">

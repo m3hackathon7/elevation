@@ -12,6 +12,9 @@ angular.module('starter.route', [])
       .then(function(route) {
         $log.debug(route);
         self.route = route;
+      }, function(error) {
+        $log.error(error);
+        self.route = null;
       });
   };
 
@@ -39,9 +42,11 @@ angular.module('starter.route', [])
 
   $cordovaGeolocation.getCurrentPosition()
     .then(function(position) {
+      $log.debug('current location', position);
       self.currentPosition = position;
     }, function(error) {
       $log.error(error);
+      self.currentPosition = null;
     });
 })
 
@@ -73,50 +78,105 @@ angular.module('starter.route', [])
   };
 })
 
-.directive('googleMap', function() {
+.directive('evGoogleMap', function($log) {
   return {
     restrict: 'E',
+    scope: {
+      center: '=',
+      route: '='
+    },
     link: function(scope, element, attrs) {
-      var map, marker;
+      var overlays = [];
 
-      scope.$watch(attrs.center, function(newValue, oldValue) {
-        if (!newValue) {
-          return;
+      var map = new google.maps.Map(element[0], {
+        zoom: 14,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+      });
+
+      scope.$watch('center', function() {
+        if (scope.center) {
+          moveMap(scope.center);
         }
-
-        if (map) {
-          moveMap(newValue);
-        } else {
-          showMap(newValue);
+      });
+      scope.$watch('route', function() {
+        if (scope.route && scope.route.legs) {
+          showRoute(scope.route);
         }
       });
 
-      function showMap(position) {
-        var latlng = positionToLatLng(position);
-
-        var options = {
-          zoom: 14,
-          center: latlng,
-          mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
-        map = new google.maps.Map(element[0], options);
-        marker = new google.maps.Marker({
-          position: latlng,
-          map: map
-        });
-      }
-
       function moveMap(position) {
         var latlng = positionToLatLng(position);
-
         map.panTo(latlng);
-        marker.setPosition(latlng);
+        addMarker(latlng);
+      }
+
+      function showRoute(route) {
+        $log.debug(route);
+        var polyline = createRoutePolyline(route);
+        addOverlay(polyline);
+
+        var bounds = new google.maps.LatLngBounds(
+          new google.maps.LatLng(route.bounds.southwest),
+          new google.maps.LatLng(route.bounds.northeast)
+        );
+        map.panToBounds(bounds);
+      }
+
+      function addMarker(latlng) {
+        var marker = new google.maps.Marker({
+          position: latlng
+        });
+        addOverlay(marker);
+      }
+
+      function addOverlay(overlay) {
+        overlay.setMap(map);
+        overlays.push(overlay);
+      }
+
+      function clearOverlays() {
+        overlays.forEach(function(overlay) {
+          overlay.setMap(null);
+        });
+        overlays.length = 0;
       }
 
       function positionToLatLng(position) {
         var lat = position.coords.latitude;
         var lng = position.coords.longitude;
         return new google.maps.LatLng(lat, lng);
+      }
+
+      function createBounds(routeBounds) {
+        var bounds = new google.maps.LatLngBounds({
+          ne: createLatLng(route.bounds.northeast),
+          sw: createLatLng(route.bounds.southwest)
+        });
+      }
+
+      function createLatLng(obj) {
+        return new google.maps.LatLng(obj.lat, obj.lng);
+      }
+
+      function createRoutePolyline(route) {
+        var path = [];
+        route.legs.forEach(function(leg) {
+          leg.steps.forEach(function(step, i, array) {
+            $log.debug(step);
+            path.push(createLatLng(step.start_location));
+            if (i === array.length - 1) {
+              path.push(createLatLng(step.end_location));
+            }
+          });
+        });
+        var polyline = new google.maps.Polyline({
+          path: path,
+          geodesic: true,
+          strokeColor: '#0000ff',
+          strokeOpacity: 1.0,
+          strokeWeight: 2
+        });
+        return polyline;
       }
     }
   };
