@@ -98,7 +98,8 @@ angular.module('starter.route', [])
       route: '='
     },
     link: function(scope, element, attrs) {
-      var overlays = [];
+      var polyline;
+      var marker;
 
       var map = new google.maps.Map(element[0], {
         center: new google.maps.LatLng(35.6808, 139.7669), // Center of Tokyo
@@ -125,76 +126,152 @@ angular.module('starter.route', [])
 
       function showRoute(route) {
         $log.debug(route);
-        var polyline = createRoutePolyline(route);
-        addOverlay(polyline);
+        if (polyline) {
+          polyline.setMap(null);
+          polyline = null;
+        }
+        polyline = createRoutePolyline(route);
+        polyline.setMap(map);
 
-        var bounds = new google.maps.LatLngBounds(
-          new google.maps.LatLng(route.bounds.southwest),
-          new google.maps.LatLng(route.bounds.northeast)
-        );
+        var bounds = createBounds(route.bounds);
         map.panToBounds(bounds);
       }
 
       function addMarker(latlng) {
-        var marker = new google.maps.Marker({
+        if (marker) {
+          marker.setMap(null);
+          marker = null;
+        }
+        marker = new google.maps.Marker({
           position: latlng
         });
-        addOverlay(marker);
+        marker.setMap(map);
       }
+    }
+  };
 
-      function addOverlay(overlay) {
-        overlay.setMap(map);
-        overlays.push(overlay);
-      }
+  function positionToLatLng(position) {
+    var lat = position.coords.latitude;
+    var lng = position.coords.longitude;
+    return new google.maps.LatLng(lat, lng);
+  }
 
-      function clearOverlays() {
-        overlays.forEach(function(overlay) {
-          overlay.setMap(null);
-        });
-        overlays.length = 0;
-      }
+  function createBounds(routeBounds) {
+    return new google.maps.LatLngBounds(
+      createLatLng(routeBounds.southwest),
+      createLatLng(routeBounds.northeast)
+    );
+  }
 
-      function positionToLatLng(position) {
-        var lat = position.coords.latitude;
-        var lng = position.coords.longitude;
-        return new google.maps.LatLng(lat, lng);
-      }
+  function createLatLng(obj) {
+    return new google.maps.LatLng(obj.lat, obj.lng);
+  }
 
-      function createBounds(routeBounds) {
-        var bounds = new google.maps.LatLngBounds({
-          ne: createLatLng(route.bounds.northeast),
-          sw: createLatLng(route.bounds.southwest)
-        });
-      }
+  function createRoutePolyline(route) {
+    var path = [];
+    $log.debug(route.legs.length, 'legs');
+    route.legs.forEach(function(leg) {
+      $log.debug(leg.steps.length, 'steps');
+      leg.steps.forEach(function(step, i, array) {
+        var decoded = google.maps.geometry.encoding.decodePath(step.polyline.points);
+        if (i === array.length - 1) {
+          path = path.concat(decoded);
+        } else {
+          path = path.concat(decoded.slice(0, decoded.length - 1));
+        }
+      });
+    });
+    $log.debug('Total:', path.length, 'points');
 
-      function createLatLng(obj) {
-        return new google.maps.LatLng(obj.lat, obj.lng);
-      }
+    var polyline = new google.maps.Polyline({
+      path: path,
+      geodesic: true,
+      strokeColor: '#0000ff',
+      strokeOpacity: 1.0,
+      strokeWeight: 3
+    });
+    return polyline;
+  }
+})
 
-      function createRoutePolyline(route) {
-        var path = [];
-        $log.debug(route.legs.length, 'legs');
+.directive('evElevationChart', function($log) {
+  return {
+    restrict: 'E',
+    scope: {
+      route: '='
+    },
+    link: function(scope, element, attrs) {
+      scope.$watch('route', function(newValue, oldValue) {
+        if (scope.route && scope.route.legs) {
+          var data = prepareData(scope.route);
+          $log.debug(data);
+          showRoute(data);
+        }
+      });
+
+      function prepareData(route) {
+        var points = [];
+        var distance = 0;
         route.legs.forEach(function(leg) {
-          $log.debug(leg.steps.length, 'steps');
           leg.steps.forEach(function(step, i, array) {
-            var decoded = google.maps.geometry.encoding.decodePath(step.polyline.points);
+            points.push(createPoint(step.start_location, distance));
+            distance += step.distance.value;
             if (i === array.length - 1) {
-              path = path.concat(decoded);
-            } else {
-              path = path.concat(decoded.slice(0, decoded.length - 1));
+              points.push(createPoint(step.end_location, distance));
             }
           });
         });
-        $log.debug('Total:', path.length, 'points');
+        return points;
+      }
 
-        var polyline = new google.maps.Polyline({
-          path: path,
-          geodesic: true,
-          strokeColor: '#0000ff',
-          strokeOpacity: 1.0,
-          strokeWeight: 3
-        });
-        return polyline;
+      function createPoint(location, distance) {
+        return angular.extend({
+          distance: distance,
+          elevation: Math.random() * 10
+        }, location);
+      }
+
+      function showRoute(data) {
+        var width = element.prop('offsetWidth');
+        var height = 300;
+        $log.debug(width, height);
+
+        var x = d3.scale.linear()
+          .range([0, width]);
+        var y = d3.scale.linear()
+          .range([height, 0]);
+
+        var xAxis = d3.svg.axis()
+          .scale(x)
+          .orient('bottom');
+        var yAxis = d3.svg.axis()
+          .scale(y)
+          .orient('left');
+
+        var area = d3.svg.area()
+          .x(function(d) { return x(d.distance); })
+          .y0(height)
+          .y1(function(d) { return y(d.elevation); });
+
+        var svg = d3.select(element[0]).append('svg')
+          .attr('width', width)
+          .attr('height', height)
+        .append('g');
+
+        x.domain([0, d3.max(data, function(d) { return d.distance; })]);
+        y.domain([0, d3.max(data, function(d) { return d.elevation; })]);
+
+        svg.append('path')
+          .datum(data)
+          .attr('class', 'elevation-chart-area')
+          .attr('d', area);
+        svg.append('g')
+          .attr('class', 'elevation-chart-axis elevation-chart-axis-x')
+          .attr('transform', 'translate(0, ' + height + ')')
+          .call(xAxis);
+        svg.append('g')
+          .attr('class', 'elevation-chart-axis elevation-chart-axis-y')
+          .call(yAxis);
       }
     }
   };

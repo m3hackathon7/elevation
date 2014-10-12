@@ -5,6 +5,8 @@
   <ion-content>
     <ev-google-map class="route-map" center="route.currentPosition" route="route.route"></ev-google-map>
 
+    <ev-elevation-chart class="elevation-chart" route="route.route"></ev-elevation-chart>
+
     <div class="list" ng-repeat="leg in route.route.legs">
       <div class="item item-divider">
         {{leg.duration.text}}, {{leg.distance.text}}
