@@ -82,6 +82,33 @@ angular.module('starter.route', [])
   };
 })
 
+.factory('Elevations', function($http, $log) {
+  var url = 'https://maps.googleapis.com/maps/api/elevation/json';
+  // API proxy for browser testing.
+  if (!window.cordova) {
+    url = 'http://localhost:3333/elevations';
+  }
+
+  function search(points) {
+    var locations = points.map(function(point) {
+      return [point.lat, point.lng].join(',');
+    }).join('|');
+    var params = {
+      locations: locations
+    };
+    $log.debug('locations length:', locations.length, 'points:', points.length);
+    $log.debug(locations);
+    return $http.get(url, { params: params })
+      .then(function(response) {
+        return response.data;
+      });
+  }
+
+  return {
+    search: search
+  };
+})
+
 .filter('latlng', function(numberFilter) {
   return function(latlng) {
     var lat = numberFilter(latlng.lat, 4);
@@ -194,7 +221,7 @@ angular.module('starter.route', [])
   }
 })
 
-.directive('evElevationChart', function($log) {
+.directive('evElevationChart', function($log, Elevations) {
   return {
     restrict: 'E',
     scope: {
@@ -205,7 +232,15 @@ angular.module('starter.route', [])
         if (scope.route && scope.route.legs) {
           var data = prepareData(scope.route);
           $log.debug(data);
-          showRoute(data);
+          Elevations.search(data)
+            .then(function(result) {
+              $log.debug(result);
+              var elevations = result.results;
+              data.forEach(function(point, i) {
+                point.elevation = elevations[i].elevation;
+              });
+              showRoute(data);
+            });
         }
       });
 
