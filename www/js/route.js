@@ -13,7 +13,11 @@ angular.module('starter.route', [])
         $log.debug(route);
         self.route = route;
       }, function(error) {
-        $log.error(error);
+        $log.error('Failed to search route:', error);
+        $ionicPopup.alert({
+          title: 'Error',
+          template: 'Failed to search route.'
+        });
         self.route = null;
       });
   };
@@ -46,12 +50,20 @@ angular.module('starter.route', [])
       self.currentPosition = position;
     }, function(error) {
       $log.error(error);
+      $ionicPopup.alert({
+        title: 'Error',
+        template: error.toString()
+      });
       self.currentPosition = null;
     });
 })
 
 .factory('Routes', function($http) {
   var url = 'http://maps.googleapis.com/maps/api/directions/json';
+  // API proxy for browser testing.
+  if (!window.cordova) {
+    url = 'http://localhost:3333/routes';
+  }
 
   function search(from, to) {
     var params = {
@@ -89,6 +101,7 @@ angular.module('starter.route', [])
       var overlays = [];
 
       var map = new google.maps.Map(element[0], {
+        center: new google.maps.LatLng(35.6808, 139.7669), // Center of Tokyo
         zoom: 14,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       });
@@ -160,21 +173,26 @@ angular.module('starter.route', [])
 
       function createRoutePolyline(route) {
         var path = [];
+        $log.debug(route.legs.length, 'legs');
         route.legs.forEach(function(leg) {
+          $log.debug(leg.steps.length, 'steps');
           leg.steps.forEach(function(step, i, array) {
-            $log.debug(step);
-            path.push(createLatLng(step.start_location));
+            var decoded = google.maps.geometry.encoding.decodePath(step.polyline.points);
             if (i === array.length - 1) {
-              path.push(createLatLng(step.end_location));
+              path = path.concat(decoded);
+            } else {
+              path = path.concat(decoded.slice(0, decoded.length - 1));
             }
           });
         });
+        $log.debug('Total:', path.length, 'points');
+
         var polyline = new google.maps.Polyline({
           path: path,
           geodesic: true,
           strokeColor: '#0000ff',
           strokeOpacity: 1.0,
-          strokeWeight: 2
+          strokeWeight: 3
         });
         return polyline;
       }
