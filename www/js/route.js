@@ -251,7 +251,7 @@ angular.module('starter.route', [])
         left: 50
       };
       var width = element.prop('offsetWidth') - margin.left - margin.right;
-      var height = 200 - margin.top - margin.bottom;
+      var height = 160 - margin.top - margin.bottom;
       $log.debug(width, height);
 
       var x = d3.scale.linear()
