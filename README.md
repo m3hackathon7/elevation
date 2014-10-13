@@ -1,4 +1,8 @@
-A Cordova application built with Ionic.
+Ionic を使った Cordova アプリです。ひとまず、ルート検索結果の標高を表示します。
+
+![ルート検索](screenshot-search.png)
+
+![検索結果](screenshot-result.png)
 
 ## Setup
 
