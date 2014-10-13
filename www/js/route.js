@@ -334,4 +334,20 @@ angular.module('starter.route', [])
       }
     }
   };
+})
+
+.directive('evAutocomplete', function($log) {
+  return {
+    restrict: 'A',
+    require: '?ngModel',
+    link: function(scope, element, attrs, ngModel) {
+      var autocomplete = new google.maps.places.Autocomplete(element[0]);
+      google.maps.event.addListener(autocomplete, 'place_changed', function() {
+        // getPlace()'s result has inconsistent structure.
+        // var place = autocomplete.getPlace();
+        var address = element.prop('value')
+        ngModel.$setViewValue(address);
+      });
+    }
+  };
 });
