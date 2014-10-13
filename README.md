@@ -54,6 +54,4 @@ Test in device.
 
 ```
 ionic run ios
-# With livereload
-ionic run ios -l
 ```
