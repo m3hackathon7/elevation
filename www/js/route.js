@@ -251,7 +251,7 @@ angular.module('starter.route', [])
         left: 50
       };
       var width = element.prop('offsetWidth') - margin.left - margin.right;
-      var height = 300 - margin.top - margin.bottom;
+      var height = 200 - margin.top - margin.bottom;
       $log.debug(width, height);
 
       var x = d3.scale.linear()
@@ -259,12 +259,14 @@ angular.module('starter.route', [])
       var y = d3.scale.linear()
         .range([height, 0]);
 
-      var xAxis = d3.svg.axis()
+      var xAxisFunc = d3.svg.axis()
         .scale(x)
-        .orient('bottom');
-      var yAxis = d3.svg.axis()
+        .orient('bottom')
+        .ticks(5);
+      var yAxisFunc = d3.svg.axis()
         .scale(y)
-        .orient('left');
+        .orient('left')
+        .ticks(5);
 
       var area = d3.svg.area()
         .x(function(d) { return x(d.distance); })
@@ -276,6 +278,13 @@ angular.module('starter.route', [])
         .attr('height', height + margin.top + margin.bottom)
       .append('g')
         .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
+
+      var xAxis = svg.append('g')
+        .attr('class', 'elevation-chart-axis elevation-chart-axis-x')
+        .attr('transform', 'translate(0, ' + height + ')');
+
+      var yAxis = svg.append('g')
+        .attr('class', 'elevation-chart-axis elevation-chart-axis-y');
 
       function prepareData(route) {
         var points = [];
@@ -303,18 +312,20 @@ angular.module('starter.route', [])
         x.domain([0, d3.max(data, function(d) { return d.distance; })]);
         y.domain([0, d3.max(data, function(d) { return d.elevation; })]);
 
-        svg.append('path')
-          .datum(data)
+        svg.selectAll('path.elevation-chart-area')
+          .data([data])
+          .attr('d', area)
+        .enter().append('path')
           .attr('class', 'elevation-chart-area')
           .attr('d', area);
-        svg.append('g')
-          .attr('class', 'elevation-chart-axis elevation-chart-axis-x')
-          .attr('transform', 'translate(0, ' + height + ')')
-          .call(xAxis);
-        svg.append('g')
-          .attr('class', 'elevation-chart-axis elevation-chart-axis-y')
-          .call(yAxis)
-        .append('text')
+
+        xAxis.call(xAxisFunc);
+        yAxis.call(yAxisFunc);
+
+        yAxis.selectAll('text.elevation-chart-legend')
+          .data(['We want only one legend here.'])
+        .enter().append('text')
+          .attr('class', 'elevation-chart-legend')
           .attr('transform', 'rotate(-90)')
           .attr('y', 6)
           .attr('dy', '.71em')
