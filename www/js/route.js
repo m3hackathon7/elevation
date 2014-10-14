@@ -336,7 +336,7 @@ angular.module('starter.route', [])
   };
 })
 
-.directive('evAutocomplete', function($log) {
+.directive('evAutocomplete', function($timeout, $log) {
   return {
     restrict: 'A',
     require: '?ngModel',
@@ -348,6 +348,19 @@ angular.module('starter.route', [])
         var address = element.prop('value')
         ngModel.$setViewValue(address);
       });
+
+      $timeout(function() {
+        var pacNodeList = document.querySelectorAll('.pac-container');
+        var pacs = Array.prototype.slice.call(pacNodeList);
+        pacs.forEach(function(pac) {
+          pac.setAttribute('data-tap-disabled', 'true');
+          // TODO: Select the right input for the clicked pac-container.
+          pac.addEventListener('click', function() {
+            $log.debug('click');
+            element.blur();
+          }, false);
+        });
+      }, 500);
     }
   };
 });
