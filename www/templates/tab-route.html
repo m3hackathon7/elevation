@@ -1,13 +1,13 @@
 <ion-view title="Route">
   <ion-nav-buttons side="right">
-    <button ng-click="route.showSearchPopup()" class="button icon ion-search"></button>
+    <button ng-click="root.showSearchPopup()" class="button icon ion-search"></button>
   </ion-nav-buttons>
   <ion-content>
-    <ev-google-map class="route-map" center="route.currentPosition" route="route.route"></ev-google-map>
+    <ev-google-map class="route-map" center="root.currentPosition" route="root.route"></ev-google-map>
 
-    <ev-elevation-chart class="elevation-chart" route="route.route"></ev-elevation-chart>
+    <ev-elevation-chart class="elevation-chart" route="root.route"></ev-elevation-chart>
 
-    <div class="list" ng-repeat="leg in route.route.legs">
+    <div class="list" ng-repeat="leg in root.route.legs">
       <div class="item item-divider">
         {{leg.duration.text}}, {{leg.distance.text}}
       </div>

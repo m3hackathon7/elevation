@@ -4,33 +4,80 @@ angular.module('elevation.terrain', [])
   var self = this;
 })
 
-.directive('evTiles', function($cordovaGeolocation,
-                               $log,
-                               MapImageService) {
+.directive('evTerrainViewer', function($cordovaGeolocation,
+                                       $log,
+                                       $window,
+                                       MapImageService) {
   return {
-    restrict: 'A',
+    restrict: 'E',
+    scope: {
+      route: '='
+    },
     link: function(scope, element, attrs) {
-      $cordovaGeolocation.getCurrentPosition()
-        .then(function(position) {
-          var lat = position.coords.latitude;
-          var lng = position.coords.longitude;
-          return MapImageService.getMapImage(lat, lng);
-        })
-        .then(function(imageData) {
-          $log.debug(imageData.width, imageData.height);
+      element.css({
+        width: '100%',
+        height: '600px',
+        display: 'block'
+      });
 
-          var image = new Image();
-          image.width = imageData.width;
-          image.height = imageData.height;
-          image.src = imageData.dataUrl;
+      scope.$watch('route', function(newValue, oldValue) {
+        if (!scope.route || !scope.route.legs) {
+          return;
+        }
 
-          element.html('');
-          element.append(image);
-        }, function(err) {
-          $log.error(err);
-        });
+        var bounds = scope.route.bounds;
+        var center = getCenter(bounds);
+        var route = getRoute(scope.route);
+
+        MapImageService.getMapImage(bounds)
+          .then(function(imageData) {
+            $log.debug('Got image data', imageData.width, imageData.height);
+
+            var viewer = new TerrainViewer(element[0]);
+            viewer.setTerrain(imageData.dataUrl, imageData.width, imageData.height);
+            // TODO: Get elevation mesh.
+            viewer.setCoordGrid([
+              0, 0,
+              0, 0
+            ], 2, 2);
+            viewer.setCenter(center.lat, center.lng);
+            viewer.setRoute(route);
+            viewer.setup();
+          }, function(err) {
+            $log.error(err);
+          });
+      });
     }
   };
+
+  function getCenter(bounds) {
+    var lat = (bounds.southwest.lat + bounds.northeast.lat) / 2;
+    var lng = (bounds.southwest.lng + bounds.northeast.lng) / 2;
+    return { lat: lat, lng: lng };
+  }
+
+  function getRoute(route) {
+    var result = [];
+    route.legs.forEach(function(leg, i, legs) {
+      leg.steps.forEach(function(step, j, steps) {
+        // TODO: Decode step.polyline.points.
+        result.push({
+          lat: step.start_location.lat,
+          lon: step.start_location.lng,
+          elev: 0
+        });
+
+        if (i === legs.length - 1 && j === steps.length - 1) {
+          result.push({
+            lat: step.end_location.lat,
+            lon: step.end_location.lng,
+            elev: 0
+          });
+        }
+      });
+    });
+    return result;
+  }
 })
 
 .factory('MapImageService', function($log,
@@ -42,30 +89,31 @@ angular.module('elevation.terrain', [])
   };
 
   /**
-   * Creates map image around the given position.
-   * @param {Number} lat
-   * @param {Number} lng
+   * Creates map image of the given bounds.
+   * @param {Object} bounds - an object that has `southwest` and `northwest`.
    * @returns {Promise} promise of created image's data
    * The data consists of width, height and dataUrl.
    */
-  function getMapImage(lat, lng) {
+  function getMapImage(bounds) {
     var deferred = $q.defer();
 
-    var tile = TileService.getTile(lat, lng, 15);
+    var southwestTile = TileService.getTile(bounds.southwest.lat, bounds.southwest.lng, 15);
+    var northeastTile = TileService.getTile(bounds.northeast.lat, bounds.northeast.lng, 15);
 
-    var size = 3;
-    var total = size * size;
+    var xSize = northeastTile.x - southwestTile.x + 1;
+    var ySize = southwestTile.y - northeastTile.y + 1;
+    var total = xSize * ySize;
 
     var canvas = $document[0].createElement('canvas');
-    canvas.width = 256 * size;
-    canvas.height = 256 * size;
+    // TODO: Crop image with the bounds.
+    canvas.width = 256 * xSize;
+    canvas.height = 256 * ySize;
     var context = canvas.getContext('2d');
 
-    var nums = getNumbers(size);
-    nums.forEach(function(row) {
-      nums.forEach(function(col) {
-        var x = tile.x + col;
-        var y = tile.y + row;
+    getNumbers(ySize).forEach(function(row) {
+      getNumbers(xSize).forEach(function(col) {
+        var x = southwestTile.x + col;
+        var y = northeastTile.y + row;
         var image = new Image();
         image.crossOrigin = 'Anonymous';
         image.src = TileService.getUrl(x, y, 15, 'ort', 'jpg');

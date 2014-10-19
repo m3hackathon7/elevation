@@ -20,6 +20,64 @@ angular.module('elevation', [
   });
 })
 
+.controller('RootCtrl', function($scope,
+                                 $log,
+                                 $ionicPopup,
+                                 $cordovaGeolocation,
+                                 Routes) {
+  var self = this;
+
+  self.search = function() {
+    Routes.search(self.from, self.to)
+      .then(function(route) {
+        $log.debug(route);
+        self.route = route;
+      }, function(error) {
+        $log.error('Failed to search route:', error);
+        $ionicPopup.alert({
+          title: 'Error',
+          template: 'Failed to search route.'
+        });
+        self.route = null;
+      });
+  };
+
+  self.hasRoute = function() {
+    return !!self.route;
+  };
+
+  self.showSearchPopup = function() {
+    $ionicPopup.show({
+      templateUrl: 'templates/route-search-popup.html',
+      title: 'Search',
+      scope: $scope,
+      buttons: [
+        { text: 'Cancel' },
+        {
+          text: 'Search',
+          type: 'button-positive',
+          onTap: function() {
+            self.search();
+          }
+        }
+      ]
+    });
+  };
+
+  $cordovaGeolocation.getCurrentPosition()
+    .then(function(position) {
+      $log.debug('current location', position);
+      self.currentPosition = position;
+    }, function(error) {
+      $log.error(error);
+      $ionicPopup.alert({
+        title: 'Error',
+        template: error.toString()
+      });
+      self.currentPosition = null;
+    });
+})
+
 .config(function($stateProvider, $urlRouterProvider) {
 
   // Ionic uses AngularUI Router which uses the concept of states

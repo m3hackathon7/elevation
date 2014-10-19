@@ -27,8 +27,14 @@
     <script src="js/route.js"></script>
     <script src="js/friends.js"></script>
     <script src="js/terrain.js"></script>
+
+    <!-- TerrainViewer -->
+    <script src="lib/threejs-build/build/three.js"></script>
+    <script src="lib/stats.js/build/stats.min.js"></script>
+    <script src="lib/underscore/underscore.js"></script>
+    <script src="js/TerrainViewer.js"></script>
   </head>
-  <body ng-app="elevation" animation="slide-left-right-ios7">
+  <body ng-app="elevation" animation="slide-left-right-ios7" ng-controller="RootCtrl as root">
     <!-- 
       The nav bar that will be updated as we navigate between views.
     -->
