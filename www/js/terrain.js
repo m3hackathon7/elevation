@@ -97,32 +97,39 @@ angular.module('elevation.terrain', [])
   function getMapImage(bounds) {
     var deferred = $q.defer();
 
-    var southwestTile = TileService.getTile(bounds.southwest.lat, bounds.southwest.lng, 15);
-    var northeastTile = TileService.getTile(bounds.northeast.lat, bounds.northeast.lng, 15);
+    var zoomLevel = 15;
 
-    var xSize = northeastTile.x - southwestTile.x + 1;
-    var ySize = southwestTile.y - northeastTile.y + 1;
-    var total = xSize * ySize;
+    // Pixel size.
+    // TODO: Pixel coordinates should be integers.
+    var southwestPosition = TileService.getPixelCoordinates(bounds.southwest.lat, bounds.southwest.lng, zoomLevel);
+    var northeastPosition = TileService.getPixelCoordinates(bounds.northeast.lat, bounds.northeast.lng, zoomLevel);
+    var offsetX = southwestPosition.x % 256;
+    var offsetY = northeastPosition.y % 256;
+    var pixelWidth = northeastPosition.x - southwestPosition.x;
+    var pixelHeight = southwestPosition.y - northeastPosition.y;
+    console.log(offsetX, offsetY, pixelWidth, pixelHeight);
+
+    // Tiles.
+    var southwestTile = TileService.getTile(bounds.southwest.lat, bounds.southwest.lng, zoomLevel);
+    var northeastTile = TileService.getTile(bounds.northeast.lat, bounds.northeast.lng, zoomLevel);
+    var xTileCount = northeastTile.x - southwestTile.x + 1;
+    var yTileCount = southwestTile.y - northeastTile.y + 1;
+    var total = xTileCount * yTileCount;
 
     var canvas = $document[0].createElement('canvas');
-    // TODO: Crop image with the bounds.
-    canvas.width = 256 * xSize;
-    canvas.height = 256 * ySize;
+    canvas.width = pixelWidth;
+    canvas.height = pixelHeight;
     var context = canvas.getContext('2d');
 
-    getNumbers(ySize).forEach(function(row) {
-      getNumbers(xSize).forEach(function(col) {
+    getNumbers(yTileCount).forEach(function(row) {
+      getNumbers(xTileCount).forEach(function(col) {
         var x = southwestTile.x + col;
         var y = northeastTile.y + row;
-        var image = new Image();
-        image.crossOrigin = 'Anonymous';
-        image.src = TileService.getUrl(x, y, 15, 'ort', 'jpg');
-        image.width = 256;
-        image.height = 256;
+        var image = createImage(x, y);
         image.addEventListener('load', function() {
           $log.debug('Loaded', x, y, image.src);
 
-          context.drawImage(image, col * 256, row * 256);
+          context.drawImage(image, col * 256 - offsetX, row * 256 - offsetY);
           total--;
 
           if (total === 0) {
@@ -143,6 +150,15 @@ angular.module('elevation.terrain', [])
     return deferred.promise;
   }
 
+  function createImage(x, y) {
+    var image = new Image();
+    image.crossOrigin = 'Anonymous';
+    image.src = TileService.getUrl(x, y, 15, 'ort', 'jpg');
+    image.width = 256;
+    image.height = 256;
+    return image;
+  }
+
   function getNumbers(size) {
     var result = [];
     for (var i = 0; i < size; i++) {
@@ -157,7 +173,9 @@ angular.module('elevation.terrain', [])
     getTileUrl: getTileUrl,
     getTileUrls: getTileUrls,
     getTile: getTile,
-    getUrl: getUrl
+    getUrl: getUrl,
+    getWorldCoordinates: getWorldCoordinates,
+    getPixelCoordinates: getPixelCoordinates
   };
 
   /**
@@ -183,6 +201,22 @@ angular.module('elevation.terrain', [])
     var x = 128 / Math.PI * (lngRadian + Math.PI);
     var y = -128 / Math.PI / 2 * Math.log((1 + Math.sin(latRadian)) / (1 - Math.sin(latRadian))) + 128;
 
+    return { x: x, y: y };
+  }
+
+  /**
+  * Converts latitude and longitude in degree to pixel coordinates.
+  * https://developers.google.com/maps/documentation/javascript/examples/map-coordinates
+  * @param {Number} lat - latitude in degree
+  * @param {Number} lng - longitude in degree
+  * @param {Number} zoom - zoom level
+  * @returns {Number}
+  */
+  function getPixelCoordinates(lat, lng, zoom) {
+    var worldCoords = getWorldCoordinates(lat, lng);
+    var scale = Math.pow(2, zoom);
+    var x = worldCoords.x * scale;
+    var y = worldCoords.y * scale;
     return { x: x, y: y };
   }
 
