@@ -1,61 +1,110 @@
-angular.module('elevation.texture', [])
+angular.module('elevation.terrain', [])
 
-.controller('TextureCtrl', function() {
+.controller('TerrainCtrl', function() {
   var self = this;
 })
 
-.directive('evGsiTiles', function($cordovaGeolocation,
-                                  $log,
-                                  TextureService) {
+.directive('evTiles', function($cordovaGeolocation,
+                               $log,
+                               MapImageService) {
   return {
     restrict: 'A',
     link: function(scope, element, attrs) {
-      var canvas = element[0];
-      canvas.width = 256 * 3;
-      canvas.height = 256 * 3;
-      var context = canvas.getContext('2d');
-
       $cordovaGeolocation.getCurrentPosition()
         .then(function(position) {
-          $log.debug(position);
           var lat = position.coords.latitude;
           var lng = position.coords.longitude;
+          return MapImageService.getMapImage(lat, lng);
+        })
+        .then(function(imageData) {
+          $log.debug(imageData.width, imageData.height);
 
-          var tile = TextureService.getTile(lat, lng, 15);
+          var image = new Image();
+          image.width = imageData.width;
+          image.height = imageData.height;
+          image.src = imageData.dataUrl;
 
-          var nums = [0, 1, 2];
-          var total = 3 * 3;
-          nums.forEach(function(row) {
-            nums.forEach(function(col) {
-              var x = tile.x + col;
-              var y = tile.y + row;
-              var image = new Image();
-              image = new Image();
-              image.crossOrigin = 'Anonymous';
-              image.src = TextureService.getUrl(x, y, 15, 'ort', 'jpg');
-              image.width = 256;
-              image.height = 256;
-              image.addEventListener('load', function() {
-                $log.debug('Loaded', x, y, image.src);
-
-                context.drawImage(image, col * 256, row * 256);
-                total--;
-
-                if (total === 0) {
-                  $log.debug('Done');
-                  // var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                  var imageData = canvas.toDataURL('image/png');
-                  $log.debug(imageData);
-                }
-              });
-            });
-          });
+          element.html('');
+          element.append(image);
+        }, function(err) {
+          $log.error(err);
         });
     }
   };
 })
 
-.factory('TextureService', function() {
+.factory('MapImageService', function($log,
+                                     $q,
+                                     $document,
+                                     TileService) {
+  return {
+    getMapImage: getMapImage
+  };
+
+  /**
+   * Creates map image around the given position.
+   * @param {Number} lat
+   * @param {Number} lng
+   * @returns {Promise} promise of created image's data
+   * The data consists of width, height and dataUrl.
+   */
+  function getMapImage(lat, lng) {
+    var deferred = $q.defer();
+
+    var tile = TileService.getTile(lat, lng, 15);
+
+    var size = 3;
+    var total = size * size;
+
+    var canvas = $document[0].createElement('canvas');
+    canvas.width = 256 * size;
+    canvas.height = 256 * size;
+    var context = canvas.getContext('2d');
+
+    var nums = getNumbers(size);
+    nums.forEach(function(row) {
+      nums.forEach(function(col) {
+        var x = tile.x + col;
+        var y = tile.y + row;
+        var image = new Image();
+        image.crossOrigin = 'Anonymous';
+        image.src = TileService.getUrl(x, y, 15, 'ort', 'jpg');
+        image.width = 256;
+        image.height = 256;
+        image.addEventListener('load', function() {
+          $log.debug('Loaded', x, y, image.src);
+
+          context.drawImage(image, col * 256, row * 256);
+          total--;
+
+          if (total === 0) {
+            $log.debug('Done');
+            deferred.resolve({
+              width: canvas.width,
+              height: canvas.height,
+              dataUrl: canvas.toDataURL('image/png')
+            });
+          }
+        });
+        image.addEventListener('error', function() {
+          deferred.reject(new Error('Failed to load image: ' + image.src));
+        });
+      });
+    });
+
+    return deferred.promise;
+  }
+
+  function getNumbers(size) {
+    var result = [];
+    for (var i = 0; i < size; i++) {
+      result.push(i);
+    }
+    return result;
+  }
+})
+
+.factory('TileService', function() {
   return {
     getTileUrl: getTileUrl,
     getTileUrls: getTileUrls,

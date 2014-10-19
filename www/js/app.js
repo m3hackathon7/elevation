@@ -3,7 +3,7 @@ angular.module('elevation', [
   'ngCordova',
   'elevation.route',
   'elevation.friends',
-  'elevation.texture'
+  'elevation.terrain'
 ])
 
 .run(function($ionicPlatform) {
@@ -66,12 +66,12 @@ angular.module('elevation', [
       }
     })
 
-    .state('tab.texture', {
-      url: '/texture',
+    .state('tab.terrain', {
+      url: '/terrain',
       views: {
-        'tab-texture': {
-          templateUrl: 'templates/tab-texture.html',
-          controller: 'TextureCtrl as texture'
+        'tab-terrain': {
+          templateUrl: 'templates/tab-terrain.html',
+          controller: 'TerrainCtrl as terrain'
         }
       }
     });
