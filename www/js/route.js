@@ -1,4 +1,4 @@
-angular.module('starter.route', [])
+angular.module('elevation.route', [])
 
 .controller('RouteCtrl', function($scope,
                                   $log,
