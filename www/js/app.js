@@ -71,7 +71,7 @@ angular.module('elevation', [
       views: {
         'tab-texture': {
           templateUrl: 'templates/tab-texture.html',
-          controller: 'TextureCtrl'
+          controller: 'TextureCtrl as texture'
         }
       }
     });

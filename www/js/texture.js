@@ -1,12 +1,66 @@
 angular.module('elevation.texture', [])
 
-.controller('TextureCtrl', function($scope) {
+.controller('TextureCtrl', function() {
+  var self = this;
+})
+
+.directive('evGsiTiles', function($cordovaGeolocation,
+                                  $log,
+                                  TextureService) {
+  return {
+    restrict: 'A',
+    link: function(scope, element, attrs) {
+      var canvas = element[0];
+      canvas.width = 256 * 3;
+      canvas.height = 256 * 3;
+      var context = canvas.getContext('2d');
+
+      $cordovaGeolocation.getCurrentPosition()
+        .then(function(position) {
+          $log.debug(position);
+          var lat = position.coords.latitude;
+          var lng = position.coords.longitude;
+
+          var tile = TextureService.getTile(lat, lng, 15);
+
+          var nums = [0, 1, 2];
+          var total = 3 * 3;
+          nums.forEach(function(row) {
+            nums.forEach(function(col) {
+              var x = tile.x + col;
+              var y = tile.y + row;
+              var image = new Image();
+              image = new Image();
+              image.crossOrigin = 'Anonymous';
+              image.src = TextureService.getUrl(x, y, 15, 'ort', 'jpg');
+              image.width = 256;
+              image.height = 256;
+              image.addEventListener('load', function() {
+                $log.debug('Loaded', x, y, image.src);
+
+                context.drawImage(image, col * 256, row * 256);
+                total--;
+
+                if (total === 0) {
+                  $log.debug('Done');
+                  // var imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                  var imageData = canvas.toDataURL('image/png');
+                  $log.debug(imageData);
+                }
+              });
+            });
+          });
+        });
+    }
+  };
 })
 
 .factory('TextureService', function() {
   return {
     getTileUrl: getTileUrl,
-    getTileUrls: getTileUrls
+    getTileUrls: getTileUrls,
+    getTile: getTile,
+    getUrl: getUrl
   };
 
   /**
@@ -77,19 +131,8 @@ angular.module('elevation.texture', [])
   * @returns {String} image URL
   */
   function getUrl(x, y, zoom, id, ext) {
-    var url = [
-      'http://cyberjapandata.gsi.go.jp/xyz/',
-      id,
-      '/',
-      zoom,
-      '/',
-      x,
-      '/',
-      y,
-      '.',
-      ext
-    ].join('');
-    return url;
+    var base = 'http://cyberjapandata.gsi.go.jp/xyz';
+    return [base, id, zoom, x, y + '.' + ext].join('/');
   }
 
   /**
