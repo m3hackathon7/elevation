@@ -3,6 +3,23 @@ angular.module('elevation.route', [])
 .controller('RouteCtrl', function() {
 })
 
+.factory('Location', function($cordovaGeolocation, $log) {
+  function getCurrentPosition(callback) {
+    var position = $cordovaGeolocation
+    .getCurrentPosition()
+    .then(function (position) {
+        $log.debug('latitude', position.coords.latitude, 'longitude', position.coords.longitude);
+         callback({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      }, function(err) {
+        // error
+      });
+  }
+
+  return {
+    currentPosition: getCurrentPosition
+  };
+})
+
 .factory('Routes', function($http) {
   var url = 'http://maps.googleapis.com/maps/api/directions/json';
   // API proxy for browser testing.

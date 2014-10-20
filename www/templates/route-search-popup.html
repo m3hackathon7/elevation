@@ -2,7 +2,9 @@
   <label class="item item-input">
     <input type="text" ng-model="root.from" ev-autocomplete placeholder="From">
   </label>
+  <button class="button button-icon icon ion-pinpoint" ng-click="root.setCurrentLocation('from')"></button>
   <label class="item item-input">
     <input type="text" ng-model="root.to" ev-autocomplete placeholder="To">
   </label>
+  <button class="button button-icon icon ion-pinpoint" ng-click="root.setCurrentLocation('to')"></button>
 </div>

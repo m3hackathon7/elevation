@@ -24,6 +24,7 @@ angular.module('elevation', [
                                  $log,
                                  $ionicPopup,
                                  $cordovaGeolocation,
+                                 Location,
                                  Routes) {
   var self = this;
 
@@ -76,6 +77,16 @@ angular.module('elevation', [
       });
       self.currentPosition = null;
     });
+
+  self.setCurrentLocation = function(fromOrTo) {
+    Location.currentPosition(function(position) {
+      if (fromOrTo == 'from') {
+        self.from = position.latitude + ',' + position.longitude;
+      } else if (fromOrTo == 'to') {
+        self.to = position.latitude + ',' + position.longitude;
+      }
+    });
+  };
 })
 
 .config(function($stateProvider, $urlRouterProvider) {
