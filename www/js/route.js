@@ -4,7 +4,8 @@ angular.module('elevation.route', [])
                                   $log,
                                   $ionicPopup,
                                   $cordovaGeolocation,
-                                  Routes) {
+                                  Routes,
+                                  Location) {
   var self = this;
 
   self.search = function() {
@@ -56,6 +57,33 @@ angular.module('elevation.route', [])
       });
       self.currentPosition = null;
     });
+
+  $scope.setCurrentLocation = function(fromOrTo) {
+    Location.currentPosition(function(position) {
+      if (fromOrTo == 'from') {
+        self.from = position.latitude + ',' + position.longitude;
+      } else if (fromOrTo == 'to') {
+        self.to = position.latitude + ',' + position.longitude;
+      }
+    });
+  }
+})
+
+.factory('Location', function($cordovaGeolocation, $log) {
+  function getCurrentPosition(callback) {
+    var position = $cordovaGeolocation
+    .getCurrentPosition()
+    .then(function (position) {
+        $log.debug('latitude', position.coords.latitude, 'longitude', position.coords.longitude);
+         callback({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+      }, function(err) {
+        // error
+      });
+  }
+
+  return {
+    currentPosition: getCurrentPosition
+  };
 })
 
 .factory('Routes', function($http) {
