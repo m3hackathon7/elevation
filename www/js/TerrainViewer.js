@@ -92,6 +92,7 @@
       switch( event.keyCode ) {
         case 16: self.current.isShiftDown = true; break;
         case 17: self.current.isCtrlDown = true; break;
+        case 65: self.current.isCtrlDown = true; break;
       }
     });
 
@@ -99,6 +100,7 @@
       switch ( event.keyCode ) {
         case 16: self.current.isShiftDown = false; break;
         case 17: self.current.isCtrlDown = false; break;
+        case 65: self.current.isCtrlDown = false; break;
       }
     });
 
@@ -285,7 +287,7 @@
           var pos = self.relativeFromCenter(point.lat, point.lon);
           // 地図とかぶらないように少し浮かせる。
           geometry.vertices[ i ] =
-            new THREE.Vector3( pos.x, point.elev + 1, pos.y );
+            new THREE.Vector3( pos.x, point.elev + 1, - pos.y );
 
           colors[i] = new THREE.Color( 0xffffff );
           colors[i].setHSL( 0.6, 1.0, i / l * 0.5 + 0.5 );
@@ -296,7 +298,7 @@
 
       $r.register('m:route', function() {
         return new THREE.LineBasicMaterial({
-          color: 0xffffff, opacity: 1, linewidth: 3,
+          color: 0xffffff, opacity: 1, linewidth: 10,
           vertexColors: THREE.VertexColors
         });
       });
@@ -304,6 +306,7 @@
       $r.register('o:route', function() {
         return new THREE.Line($r.get('g:route'), $r.get('m:route') );
       });
+
 
       $r.register('g:cursor', function() {
         var geo = new THREE.CylinderGeometry(50, 0, 100);
@@ -338,6 +341,7 @@
       scene.add($r.get('o:route'));
 
       scene.add($r.get('o:cursor'));
+      scene.add(new THREE.AxisHelper( 1000 ));
       return scene;
     }
 
@@ -392,13 +396,13 @@
       var cursor = $r.get('o:cursor');
       var meter = this.relativeFromCenter(lat, lon);
       cursor.position.x = meter.x;
-      cursor.position.z = meter.y;
+      cursor.position.z = - meter.y;
       cursor.position.y = elev;
     };
 
 
-    var angle = {theta: 25, phi: 15};
-    var radious = 1600;
+    var angle = {theta: 0, phi: 15};
+    var radious = 5000;
     var lookAt = new THREE.Vector3();
     var mouseDown = {};
 
