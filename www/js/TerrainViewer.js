@@ -14,8 +14,8 @@
   // 経度・経度からメートル座標に変換
   function coordToMeter(latitude, longitude) {
     return {
-      x: DEGREE_TO_METER * Math.cos( rad(latitude) ) * longitude,
-      y: DEGREE_TO_METER * latitude
+      x: DEGREE_TO_METER * longitude,
+      y: DEGREE_TO_METER * latitude // TODO: メルカトル図法計算
     };
   }
 
@@ -155,8 +155,9 @@
       // 地形のサイズを設定。
       var southWest = coordToMeter(southLat, westLng);
       var northEast = coordToMeter(northLat, eastLng);
-      this.terrain.width = northEast.x - southWest.x;
-      this.terrain.height = northEast.y - southWest.y;
+      console.log(northEast.x - southWest.x);
+      this.terrain.width = Math.abs(northEast.x - southWest.x);
+      this.terrain.height = Math.abs(northEast.y - southWest.y);
       console.log('Terrain size', this.terrain.width, this.terrain.height);
     };
 
