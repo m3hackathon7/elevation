@@ -1,4 +1,5 @@
-(function(global) {
+(function() {
+
   // -------------------------
   // utility
   // -------------------------
@@ -10,7 +11,7 @@
 
   var DEGREE_TO_METER = 6378150 * 2 * Math.PI / 360;
 
-  // 経度・経度からピクセル座標に変換
+  // 経度・経度からメートル座標に変換
   function coordToMeter(latitude, longitude) {
     return {
       x: DEGREE_TO_METER * Math.cos( rad(latitude) ) * longitude,
@@ -302,6 +303,21 @@
       $r.register('o:route', function() {
         return new THREE.Line($r.get('g:route'), $r.get('m:route') );
       });
+
+      $r.register('g:cursor', function() {
+        var geo = new THREE.CylinderGeometry(50, 0, 100);
+        geo.applyMatrix(new THREE.Matrix4().makeTranslation(0, 50, 0));
+        return geo;
+      });
+
+      $r.register('m:cursor', function() {
+        return new THREE.MeshBasicMaterial({ color: 0x90D0D0, opacity: 0.7});
+      });
+
+      $r.register('o:cursor', function() {
+        return new THREE.Mesh($r.get('g:cursor'), $r.get('m:cursor') );
+      });
+
     }
 
     // メインシーン
@@ -320,6 +336,7 @@
 
       scene.add($r.get('o:route'));
 
+      scene.add($r.get('o:cursor'));
       return scene;
     }
 
@@ -370,22 +387,44 @@
       return $r.get('c:camera');
     };
 
+    this.setCursorPosition = function(lat, lon, elev) {
+      var cursor = $r.get('o:cursor');
+      var meter = this.relativeFromCenter(lat, lon);
+      cursor.position.x = meter.x;
+      cursor.position.z = meter.y;
+      cursor.position.y = elev;
+    };
+
 
     var angle = {theta: 25, phi: 15};
     var radious = 1600;
+    var lookAt = new THREE.Vector3();
     var mouseDown = {};
 
     function update(scene) {
+      var camera = $r.get('c:camera');
+
       if (input.isMousePress()) {
         mouseDown.angle = _.clone(angle);
         mouseDown.radious = radious;
+        mouseDown.lookAt = lookAt.clone();
       }
 
       if (input.current.isMouseDown) {
         var delta = input.deltaFromDown();
-        if (input.current.isShiftDown) {
+        if (input.current.isCtrlDown) {
           //ズーム
           radious = mouseDown.radious + delta.y * 10;
+
+        } else if (input.current.isShiftDown) {
+          // 水平移動
+          var eye = new THREE.Vector3().subVectors( camera.position, lookAt );
+          var objectUp = new THREE.Vector3();
+          var pan = new THREE.Vector3();
+          pan.copy(eye).cross(camera.up).setLength(delta.x);
+          pan.add(objectUp.copy(camera.up).setLength(delta.y));
+
+          lookAt.copy( mouseDown.lookAt ).add(pan);
 
         } else {
           // 回転
@@ -395,18 +434,20 @@
         }
       }
 
-      var camera = $r.get('c:camera');
       camera.position.x = Math.sin( rad(angle.theta) ) * Math.cos( rad(angle.phi) );
       camera.position.y = Math.sin( rad(angle.phi) );
       camera.position.z = Math.cos( rad(angle.theta) ) * Math.cos( rad(angle.phi) );
       camera.position.multiplyScalar(radious);
+      camera.position.add(lookAt);
 
       camera.updateMatrix();
-      camera.lookAt( scene.position );
+      camera.lookAt( lookAt );
 
       input.update();
     };
   }
 
+
   window.TerrainViewer = TerrainViewer;
 })();
+
