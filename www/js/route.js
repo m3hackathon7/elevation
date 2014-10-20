@@ -4,14 +4,16 @@ angular.module('elevation.route', [])
 })
 
 .factory('Location', function($cordovaGeolocation, $log) {
-  function getCurrentPosition(callback) {
-    var position = $cordovaGeolocation
-    .getCurrentPosition()
-    .then(function (position) {
-        $log.debug('latitude', position.coords.latitude, 'longitude', position.coords.longitude);
-         callback({ latitude: position.coords.latitude, longitude: position.coords.longitude });
+  function getCurrentPosition() {
+    return $cordovaGeolocation
+      .getCurrentPosition()
+      .then(function (position) {
+        var lat = position.coords.latitude;
+        var lng = position.coords.longitude;
+        $log.debug('latitude', lat, 'longitude', lng);
+        return { latitude: lat, longitude: lng };
       }, function(err) {
-        // error
+        $log.error(err);
       });
   }
 
