@@ -1,10 +1,10 @@
 <div class="list">
   <label class="item item-input">
-    <input type="text" ng-model="route.from" ev-autocomplete placeholder="From">
+    <input type="text" ng-model="root.from" ev-autocomplete placeholder="From">
   </label>
-  <button class="button button-icon icon ion-pinpoint" ng-click="setCurrentLocation('from')"></button>
+  <button class="button button-icon icon ion-pinpoint" ng-click="root.setCurrentLocation('from')"></button>
   <label class="item item-input">
-    <input type="text" ng-model="route.to" ev-autocomplete placeholder="To">
+    <input type="text" ng-model="root.to" ev-autocomplete placeholder="To">
   </label>
-  <button class="button button-icon icon ion-pinpoint" ng-click="setCurrentLocation('to')"></button>
+  <button class="button button-icon icon ion-pinpoint" ng-click="root.setCurrentLocation('to')"></button>
 </div>

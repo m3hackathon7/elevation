@@ -3,7 +3,7 @@ angular.module('elevation', [
   'ngCordova',
   'elevation.route',
   'elevation.friends',
-  'elevation.texture'
+  'elevation.terrain'
 ])
 
 .run(function($ionicPlatform) {
@@ -18,6 +18,75 @@ angular.module('elevation', [
       StatusBar.styleDefault();
     }
   });
+})
+
+.controller('RootCtrl', function($scope,
+                                 $log,
+                                 $ionicPopup,
+                                 $cordovaGeolocation,
+                                 Location,
+                                 Routes) {
+  var self = this;
+
+  self.search = function() {
+    Routes.search(self.from, self.to)
+      .then(function(route) {
+        $log.debug(route);
+        self.route = route;
+      }, function(error) {
+        $log.error('Failed to search route:', error);
+        $ionicPopup.alert({
+          title: 'Error',
+          template: 'Failed to search route.'
+        });
+        self.route = null;
+      });
+  };
+
+  self.hasRoute = function() {
+    return !!self.route;
+  };
+
+  self.showSearchPopup = function() {
+    $ionicPopup.show({
+      templateUrl: 'templates/route-search-popup.html',
+      title: 'Search',
+      scope: $scope,
+      buttons: [
+        { text: 'Cancel' },
+        {
+          text: 'Search',
+          type: 'button-positive',
+          onTap: function() {
+            self.search();
+          }
+        }
+      ]
+    });
+  };
+
+  $cordovaGeolocation.getCurrentPosition()
+    .then(function(position) {
+      $log.debug('current location', position);
+      self.currentPosition = position;
+    }, function(error) {
+      $log.error(error);
+      $ionicPopup.alert({
+        title: 'Error',
+        template: error.toString()
+      });
+      self.currentPosition = null;
+    });
+
+  self.setCurrentLocation = function(fromOrTo) {
+    Location.currentPosition(function(position) {
+      if (fromOrTo == 'from') {
+        self.from = position.latitude + ',' + position.longitude;
+      } else if (fromOrTo == 'to') {
+        self.to = position.latitude + ',' + position.longitude;
+      }
+    });
+  };
 })
 
 .config(function($stateProvider, $urlRouterProvider) {
@@ -66,12 +135,12 @@ angular.module('elevation', [
       }
     })
 
-    .state('tab.texture', {
-      url: '/texture',
+    .state('tab.terrain', {
+      url: '/terrain',
       views: {
-        'tab-texture': {
-          templateUrl: 'templates/tab-texture.html',
-          controller: 'TextureCtrl as texture'
+        'tab-terrain': {
+          templateUrl: 'templates/tab-terrain.html',
+          controller: 'TerrainCtrl as terrain'
         }
       }
     });
