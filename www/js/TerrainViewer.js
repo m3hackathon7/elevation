@@ -31,7 +31,8 @@
       position: new THREE.Vector2(),
       isMouseDown: false,
       isShiftDown: false,
-      isCtrlDown: false
+      isCtrlDown: false,
+      isAltDown: false
     };
     this.mouseDown = {}; // マウス押下時の状態
     this.previous = {}; // 前フレームの状態
@@ -92,6 +93,7 @@
       switch( event.keyCode ) {
         case 16: self.current.isShiftDown = true; break;
         case 17: self.current.isCtrlDown = true; break;
+        case 18: self.current.isAltDown = true; break;
         case 65: self.current.isCtrlDown = true; break;
       }
     });
@@ -100,6 +102,7 @@
       switch ( event.keyCode ) {
         case 16: self.current.isShiftDown = false; break;
         case 17: self.current.isCtrlDown = false; break;
+        case 18: self.current.isAltDown = false; break;
         case 65: self.current.isCtrlDown = false; break;
       }
     });
@@ -417,7 +420,7 @@
 
       if (input.current.isMouseDown) {
         var delta = input.deltaFromDown();
-        if (input.current.isCtrlDown) {
+        if (input.current.isAltDown) {
           //ズーム
           radious = mouseDown.radious + delta.y * 10;
 
