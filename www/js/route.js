@@ -100,6 +100,8 @@ angular.module('elevation.route', [])
         zoom: 14,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       });
+      // Map information retention.
+      self.map = map;
 
       scope.$watch('center', function() {
         if (scope.center) {
@@ -298,6 +300,67 @@ angular.module('elevation.route', [])
           .attr('dy', '.71em')
           .style('text-anchor', 'end')
           .text('Elevation (m)');
+      }
+    }
+  };
+})
+
+.directive('evElevationGrid', function($log, Elevations) {
+  return {
+    restrict: 'E',
+    scope: {
+      route: '='
+    },
+    link: function(scope, element, attrs) {
+      scope.$watch('route', function(newValue, oldValue) {
+        if (self.map.getBounds()) {
+          var data = prepareData(self.map);
+          $log.debug('points', data);
+          Elevations.search(data)
+            .then(function (result) {
+              $log.debug(result);
+              var elevations = result.results;
+              data.forEach(function (point, i) {
+                point.elevation = elevations[i].elevation;
+              });
+              $log.debug('points_anddata);
+            });
+          }
+      });
+
+      function prepareData(map) {
+        var upper_left = {
+          lat: map.getBounds().getNorthEast().lat(),
+          lng: map.getBounds().getNorthEast().lng()
+        };
+        var lower_right = {
+          lat: map.getBounds().getSouthWest().lat(),
+          lng: map.getBounds().getSouthWest().lng()
+        };
+        var row = 5;
+        var col = 5;
+        var lat_step = (upper_left.lat - lower_right.lat) / row;
+        var lng_step = (upper_left.lng - lower_right.lng) / col;
+
+        // Max 512 points.
+        var points = [];
+        var lat = upper_left.lat;
+        var lng = upper_left.lng;
+        for (i=0; i<row; i++) {
+          for (ii=0; ii<col; ii++) {
+            points.push({
+              elevation: 0,
+              row: i,
+              col: ii,
+              lat: lat,
+              lng: lng
+            });
+            lng += lng_step;
+          }
+          lat += lat_step;
+        };
+
+        return points;
       }
     }
   };
