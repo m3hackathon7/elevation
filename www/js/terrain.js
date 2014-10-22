@@ -336,9 +336,7 @@ angular.module('elevation.terrain', [])
     var data = prepareElevationsData(bounds, row, col);
 
     var elevationService = new ElevationService();
-    elevationService.elevation(data, function(data) {
-      callback(data);
-    });
+    elevationService.elevation(data, callback);
   }
 
   function prepareElevationsData(bounds, row, col) {
@@ -349,9 +347,9 @@ angular.module('elevation.terrain', [])
     var lng_step = (bounds.southwest.lng - bounds.northeast.lng) / col;
 
     var lat = bounds.southwest.lat;
+    for (var ii = 0; ii <= col; ii++) {
     var lng = bounds.southwest.lng;
-    for (var i = 0; i < row; i++) {
-      for (var ii = 0; ii < col; ii++) {
+      for (var i = 0; i <= row; i++) {
         result.push(
           new google.maps.LatLng(lat, lng)
         );

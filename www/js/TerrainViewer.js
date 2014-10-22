@@ -256,7 +256,7 @@
         var tr = self.terrain;
 
         var geometry = new THREE.PlaneGeometry(
-            tr.width, tr.height, tr.coordGridWidth - 1, tr.coordGridHeight - 1 );
+            tr.width, tr.height, tr.coordGridWidth , tr.coordGridHeight  );
         geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
 
         for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
