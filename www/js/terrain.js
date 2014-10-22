@@ -8,7 +8,8 @@ angular.module('elevation.terrain', [])
                                        $log,
                                        $window,
                                        TerrainViewer,
-                                       MapImageService) {
+                                       MapImageService,
+                                       MeshElevations) {
   return {
     restrict: 'E',
     scope: {
@@ -37,7 +38,10 @@ angular.module('elevation.terrain', [])
 
             var viewer = new TerrainViewer(element[0]);
             viewer.setTerrain(imageData.dataUrl, bounds.northeast.lng, bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lat);
-            // TODO: Get elevation mesh.
+            MeshElevations.search(bounds).then(function(result) {
+              var elevations = result;
+              // TODO: 地図に標高を設定
+            });
             viewer.setCoordGrid([
               0, 0,
               0, 0
@@ -79,6 +83,7 @@ angular.module('elevation.terrain', [])
     });
     return result;
   }
+
 })
 
 .factory('MapImageService', function($log,
@@ -296,4 +301,52 @@ angular.module('elevation.terrain', [])
 
 .factory('TerrainViewer', function($window) {
   return $window.TerrainViewer;
+})
+
+.factory('MeshElevations', function($log, Elevations) {
+  return {
+    search: getElevations
+  };
+  function getElevations(bounds) {
+    var data = prepareElevationsData(bounds);
+    return Elevations.search(data)
+      .then(function(result) {
+        $log.debug(result);
+        var elevations = result.results;
+        data.forEach(function(point, i) {
+          point.elevation = elevations[i].elevation;
+        });
+        $log.debug(data);
+        return data;
+      });
+  }
+
+  function prepareElevationsData(bounds) {
+    var result = [];
+
+    // TODO: 地図の大きさに合わせる？
+    var row = 5;
+    var col = 5;
+    var lat_step = (bounds.southwest.lat - bounds.northeast.lat) / row;
+    var lng_step = (bounds.southwest.lng - bounds.northeast.lng) / col;
+
+    var lat = bounds.southwest.lat;
+    var lng = bounds.southwest.lng;
+    for (var i=0; i<row; i++) {
+      for (var ii=0; ii<col; ii++) {
+        result.push({
+          elevation: 0,
+          row: i,
+          col: ii,
+          lat: lat,
+          lng: lng
+        });
+        lng += lng_step;
+      }
+      lat += lat_step;
+    };
+
+    $log.debug('prepareElevations', result);
+    return result;
+  }
 });
