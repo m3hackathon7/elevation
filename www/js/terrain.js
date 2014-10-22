@@ -31,26 +31,50 @@ angular.module('elevation.terrain', [])
         var bounds = scope.route.bounds;
         var route = getRoute(scope.route);
 
+        var terrian = {imageUrl: null, coordGrid: null};
+        function callback(imageUrl, coordGrid) {
+          if (imageUrl) {
+            terrian.imageUrl = imageUrl;
+          }
+          if (coordGrid) {
+            terrian.coordGrid = coordGrid;
+          }
+
+          if (terrian.imageUrl && terrian.coordGrid) {
+            $log.debug("view terrian");
+            var viewer = new TerrainViewer(element[0]);
+            viewer.setTerrain(terrian.imageUrl, bounds.northeast.lng, bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lat);
+            viewer.setRoute(route);
+            viewer.setCoordGrid(terrian.coordGrid, row, col);
+            viewer.setup();
+          }
+        }
+
         MapImageService.getMapImage(bounds)
           .then(function(imageData) {
             $log.debug('Got image data', imageData.width, imageData.height);
             $log.debug('Bounds', bounds);
-
-            var viewer = new TerrainViewer(element[0]);
-            viewer.setTerrain(imageData.dataUrl, bounds.northeast.lng, bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lat);
-            MeshElevations.search(bounds).then(function(result) {
-              var elevations = result;
-              // TODO: 地図に標高を設定
-            });
-            viewer.setCoordGrid([
-              0, 0,
-              0, 0
-            ], 2, 2);
-            viewer.setRoute(route);
-            viewer.setup();
+            callback(imageData.dataUrl, null);
           }, function(err) {
             $log.error(err);
           });
+
+        var row = 10;
+        var col = 10;
+        MeshElevations.search(bounds, row, col, function(points) {
+          $log.log(points);
+          if (!points) {
+            alert("failed");
+          } else {
+            var elevs = [];
+            points.forEach(function(point) {
+              elevs.push(point.elevation);
+            });
+            callback(null, elevs);
+          }
+        });
+
+
       });
     }
   };
@@ -307,40 +331,30 @@ angular.module('elevation.terrain', [])
   return {
     search: getElevations
   };
-  function getElevations(bounds) {
-    var data = prepareElevationsData(bounds);
-    return Elevations.search(data)
-      .then(function(result) {
-        $log.debug(result);
-        var elevations = result.results;
-        data.forEach(function(point, i) {
-          point.elevation = elevations[i].elevation;
-        });
-        $log.debug(data);
-        return data;
-      });
+
+  function getElevations(bounds, row, col, callback) {
+    var data = prepareElevationsData(bounds, row, col);
+
+    var elevationService = new ElevationService();
+    elevationService.elevation(data, function(data) {
+      callback(data);
+    });
   }
 
-  function prepareElevationsData(bounds) {
+  function prepareElevationsData(bounds, row, col) {
     var result = [];
 
     // TODO: 地図の大きさに合わせる？
-    var row = 5;
-    var col = 5;
     var lat_step = (bounds.southwest.lat - bounds.northeast.lat) / row;
     var lng_step = (bounds.southwest.lng - bounds.northeast.lng) / col;
 
     var lat = bounds.southwest.lat;
     var lng = bounds.southwest.lng;
-    for (var i=0; i<row; i++) {
-      for (var ii=0; ii<col; ii++) {
-        result.push({
-          elevation: 0,
-          row: i,
-          col: ii,
-          lat: lat,
-          lng: lng
-        });
+    for (var i = 0; i < row; i++) {
+      for (var ii = 0; ii < col; ii++) {
+        result.push(
+          new google.maps.LatLng(lat, lng)
+        );
         lng += lng_step;
       }
       lat += lat_step;
