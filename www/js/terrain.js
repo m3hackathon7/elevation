@@ -30,25 +30,26 @@ angular.module('elevation.terrain', [])
 
         // TODO: Add some margin.
         var bounds = scope.route.bounds;
-        var route = getRoute(scope.route);
 
         var row = 10;
         var col = 10;
 
         var terrainPromises = {
           imageUrl: getMapImage(bounds),
-          coordGrid: getElevations(bounds, row, col)
+          coordGrid: getElevations(bounds, row, col),
+          route: fillRouteElevation(getRoute(scope.route))
         };
         $q.all(terrainPromises)
           .then(function(terrain) {
             $log.debug('Let us view terrain!');
+            $log.debug('Route:', terrain.route);
             var viewer = new TerrainViewer(element[0]);
             viewer.setTerrain(terrain.imageUrl,
                               bounds.northeast.lng,
                               bounds.southwest.lng,
                               bounds.southwest.lat,
                               bounds.northeast.lat);
-            viewer.setRoute(route);
+            viewer.setRoute(terrain.route);
             viewer.setCoordGrid(terrain.coordGrid, row, col);
             viewer.setup();
           });
@@ -91,20 +92,39 @@ angular.module('elevation.terrain', [])
         // TODO: Decode step.polyline.points.
         result.push({
           lat: step.start_location.lat,
-          lon: step.start_location.lng,
-          elev: 0
+          lon: step.start_location.lng
         });
 
         if (i === legs.length - 1 && j === steps.length - 1) {
           result.push({
             lat: step.end_location.lat,
-            lon: step.end_location.lng,
-            elev: 0
+            lon: step.end_location.lng
           });
         }
       });
     });
     return result;
+  }
+
+  function fillRouteElevation(route) {
+    var deferred = $q.defer();
+    var latlngs = route.map(function(point) {
+      return new google.maps.LatLng(point.lat, point.lon);
+    });
+    var elevationService = new ElevationService();
+    elevationService.elevation(latlngs, function(points) {
+      if (!points) {
+        deferred.reject('Failed to get elevations');
+        return;
+      }
+      // TODO: Take immutable way.
+      result = route.forEach(function(point, i) {
+        console.log(points[i]);
+        point.elev = points[i].elevation;
+      });
+      deferred.resolve(route);
+    });
+    return deferred.promise;
   }
 })
 

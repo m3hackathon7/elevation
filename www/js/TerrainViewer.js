@@ -246,7 +246,8 @@
     // 地形の座標
     this.terrain.coordGrid = [];
     this.setCoordGrid = function(coordGrid, width, height) {
-      this.terrain.coordGrid = coordGrid;
+      console.log(coordGrid.length, width, height);
+      this.terrain.coordGrid = coordGrid.map(function(elev) { return elev * 10; });
       this.terrain.coordGridWidth = width;
       this.terrain.coordGridHeight = height;
     };
@@ -356,7 +357,7 @@
           var pos = self.relativeFromCenter(point.lat, point.lon);
           // 地図とかぶらないように少し浮かせる。
           geometry.vertices[ i ] =
-            new THREE.Vector3( pos.x, point.elev + 1, - pos.y );
+            new THREE.Vector3( pos.x, point.elev * 10 + 1, - pos.y );
 
           colors[i] = new THREE.Color( 0xffffff );
           colors[i].setHSL( 0.6, 1.0, i / l * 0.5 + 0.5 );
