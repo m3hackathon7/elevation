@@ -100,6 +100,8 @@ angular.module('elevation.route', [])
         zoom: 14,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       });
+      // Map information retention.
+      self.map = map;
 
       scope.$watch('center', function() {
         if (scope.center) {

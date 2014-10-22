@@ -29,13 +29,15 @@
     <script src="js/TerrainViewer.js"></script>
 
     <!-- your app's js -->
+    <script src="js/ElevationService.js"></script>
     <script src="js/app.js"></script>
     <script src="js/route.js"></script>
     <script src="js/friends.js"></script>
     <script src="js/terrain.js"></script>
+
   </head>
   <body ng-app="elevation" animation="slide-left-right-ios7" ng-controller="RootCtrl as root">
-    <!-- 
+    <!--
       The nav bar that will be updated as we navigate between views.
     -->
     <ion-nav-bar class="bar-stable nav-title-slide-ios7">
@@ -43,7 +45,7 @@
         Back
       </ion-nav-back-button>
     </ion-nav-bar>
-    <!-- 
+    <!--
       The views will be rendered in the <ion-nav-view> directive below
       Templates are in the /templates folder (but you could also
       have templates inline in this html file if you'd like).

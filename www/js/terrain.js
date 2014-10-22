@@ -6,9 +6,11 @@ angular.module('elevation.terrain', [])
 
 .directive('evTerrainViewer', function($cordovaGeolocation,
                                        $log,
+                                       $q,
                                        $window,
                                        TerrainViewer,
-                                       MapImageService) {
+                                       MapImageService,
+                                       MeshElevations) {
   return {
     restrict: 'E',
     scope: {
@@ -30,26 +32,51 @@ angular.module('elevation.terrain', [])
         var bounds = scope.route.bounds;
         var route = getRoute(scope.route);
 
-        MapImageService.getMapImage(bounds)
-          .then(function(imageData) {
-            $log.debug('Got image data', imageData.width, imageData.height);
-            $log.debug('Bounds', bounds);
+        var row = 10;
+        var col = 10;
 
+        var terrainPromises = {
+          imageUrl: getMapImage(bounds),
+          coordGrid: getElevations(bounds, row, col)
+        };
+        $q.all(terrainPromises)
+          .then(function(terrain) {
+            $log.debug('Let us view terrain!');
             var viewer = new TerrainViewer(element[0]);
-            viewer.setTerrain(imageData.dataUrl, bounds.northeast.lng, bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lat);
-            // TODO: Get elevation mesh.
-            viewer.setCoordGrid([
-              0, 0,
-              0, 0
-            ], 2, 2);
+            viewer.setTerrain(terrain.imageUrl,
+                              bounds.northeast.lng,
+                              bounds.southwest.lng,
+                              bounds.southwest.lat,
+                              bounds.northeast.lat);
             viewer.setRoute(route);
+            viewer.setCoordGrid(terrain.coordGrid, row, col);
             viewer.setup();
-          }, function(err) {
-            $log.error(err);
           });
       });
     }
   };
+
+  function getMapImage(bounds) {
+    return MapImageService.getMapImage(bounds)
+      .then(function(imageData) {
+        $log.debug('Got image data', imageData.width, imageData.height);
+        $log.debug('Bounds', bounds);
+        return imageData.dataUrl;
+      }, function(err) {
+        $log.error(err);
+        return $q.reject(err);
+      });
+  }
+
+  function getElevations(bounds, row, col) {
+    return MeshElevations.search(bounds, row, col)
+      .then(function(points) {
+        $log.debug(points);
+        return points.map(function(point) {
+          return point.elevation;
+        });
+      });
+  }
 
   function getCenter(bounds) {
     var lat = (bounds.southwest.lat + bounds.northeast.lat) / 2;
@@ -296,4 +323,49 @@ angular.module('elevation.terrain', [])
 
 .factory('TerrainViewer', function($window) {
   return $window.TerrainViewer;
+})
+
+.factory('MeshElevations', function($log, $q, Elevations) {
+  return {
+    search: getElevations
+  };
+
+  function getElevations(bounds, row, col) {
+    var deferred = $q.defer();
+    var data = prepareElevationsData(bounds, row, col);
+
+    var elevationService = new ElevationService();
+    elevationService.elevation(data, function(points) {
+      if (!points) {
+        deferred.reject('Failed to get elevations');
+        return;
+      }
+      deferred.resolve(points);
+    });
+
+    return deferred.promise;
+  }
+
+  function prepareElevationsData(bounds, row, col) {
+    var result = [];
+
+    // TODO: 地図の大きさに合わせる？
+    var latStep = (bounds.southwest.lat - bounds.northeast.lat) / row;
+    var lngStep = (bounds.southwest.lng - bounds.northeast.lng) / col;
+
+    var lat = bounds.southwest.lat;
+    for (var ii = 0; ii <= col; ii++) {
+      var lng = bounds.southwest.lng;
+      for (var i = 0; i <= row; i++) {
+        result.push(
+          new google.maps.LatLng(lat, lng)
+        );
+        lng += lngStep;
+      }
+      lat += latStep;
+    };
+
+    $log.debug('prepareElevations', result);
+    return result;
+  }
 });
