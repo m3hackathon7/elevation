@@ -29,6 +29,7 @@
   function Input(container) {
     this.current = {
       position: new THREE.Vector2(),
+      scale: 0,
       isMouseDown: false,
       isShiftDown: false,
       isCtrlDown: false,
@@ -36,9 +37,14 @@
     };
     this.mouseDown = {}; // マウス押下時の状態
     this.previous = {}; // 前フレームの状態
+    this.gestureStart = {}; //ジェスチャ開始時
 
     this.deltaFromDown = function() {
-      return this.current.position.clone().sub(this.mouseDown.position);
+      if (this.mouseDown.position) {
+        return this.current.position.clone().sub(this.mouseDown.position);
+      } else {
+        return new THREE.Vector2();
+      }
     };
 
     this.deltaFromPrevious = function() {
@@ -51,11 +57,16 @@
     this.updateDown = function() {
       this.mouseDown = this.clone();
     };
+    this.updateGestureStart = function() {
+      this.gestureStart = this.clone();
+    };
+
     this.clone = function() {
       var obj = _.clone(this.current);
       obj.position = this.current.position.clone();
       return obj;
     };
+
     this.isMousePress = function() {
       return (this.current.isMouseDown && !this.previous.isMouseDown);
     };
@@ -73,6 +84,7 @@
     // イベント割当
     var self = this;
     on('mousedown', function(e){
+      console.log('mousedown');
       event.preventDefault();
       self.current.isMouseDown = true;
       self.updateDown();
@@ -90,6 +102,7 @@
     });
 
     on('keydown', function(event) {
+      event.preventDefault();
       switch( event.keyCode ) {
         case 16: self.current.isShiftDown = true; break;
         case 17: self.current.isCtrlDown = true; break;
@@ -107,6 +120,59 @@
       }
     });
 
+    on('touchstart', function(event) {
+      event.preventDefault();
+      console.log('touch:' + event.touches.length);
+      self.current.isMouseDown = true;
+      if (event.touches.length >= 2) {
+        self.current.isShiftDown = true;
+      }
+      touchMoveHandler(event);
+      self.updateDown();
+    });
+
+    function touchMoveHandler(event) {
+      event.preventDefault();
+      var x = 0, y = 0;
+      var count = event.touches.length;
+      for(var i = 0; i < count; i++ ) {
+        var touch = event.touches[i];
+        x = x + touch.pageX;
+        y = y + touch.pageY;
+      }
+
+      self.current.position.x = x / count;
+      self.current.position.y = y / count;
+    }
+    on('touchmove', touchMoveHandler);
+
+    function touchEndHandler(event) {
+      event.preventDefault();
+      console.log('touchend:' + event.touches.length);
+
+      if (event.touches.length == 0) {
+        self.current.isMouseDown = false;
+        self.current.mouseDown = {};
+      }
+      if (event.touches.length < 2) {
+        self.current.isShiftDown = false;
+      }
+    }
+    on('touchend', touchEndHandler);
+    on('touchcancel', touchEndHandler);
+
+
+    on('gesturestart', function(event) {
+      self.updateGestureStart();
+    });
+
+    on('gesturechange', function(event) {
+      self.current.scale = event.scale;
+    });
+
+    on('gestureend', function(event) {
+      self.gestureStart = {};
+    });
   }
 
 
@@ -404,52 +470,59 @@
     };
 
 
-    var angle = {theta: 0, phi: 15};
-    var radious = 5000;
-    var lookAt = new THREE.Vector3();
+    var sight = {
+      theta: 0, phi: 15, radious: 5000,
+      lookAt: new THREE.Vector3()
+    };
     var mouseDown = {};
 
     function update(scene) {
       var camera = $r.get('c:camera');
 
       if (input.isMousePress()) {
-        mouseDown.angle = _.clone(angle);
-        mouseDown.radious = radious;
-        mouseDown.lookAt = lookAt.clone();
+        mouseDown.sight = _.clone(sight);
+        mouseDown.sight.lookAt = sight.lookAt.clone();
       }
 
       if (input.current.isMouseDown) {
         var delta = input.deltaFromDown();
+
+        if (input.gestureStart.scale) {
+          sight.radious = mouseDown.sight.radious +
+            (input.gestureStart.scale - input.current.scale) * 1000;
+        }
+
         if (input.current.isAltDown) {
           //ズーム
-          radious = mouseDown.radious + delta.y * 10;
+          sight.radious = mouseDown.sight.radious + delta.y * 10;
 
         } else if (input.current.isShiftDown) {
+
           // 水平移動
-          var eye = new THREE.Vector3().subVectors( camera.position, lookAt );
+          var eye = new THREE.Vector3().subVectors( camera.position, sight.lookAt );
           var objectUp = new THREE.Vector3();
           var pan = new THREE.Vector3();
           pan.copy(eye).cross(camera.up).setLength(delta.x);
           pan.add(objectUp.copy(camera.up).setLength(delta.y));
 
-          lookAt.copy( mouseDown.lookAt ).add(pan);
+          sight.lookAt.copy( mouseDown.sight.lookAt ).add(pan);
 
         } else {
           // 回転
-          angle.theta = - delta.x + mouseDown.angle.theta;
-          angle.phi = Math.min(90, Math.max(0,
-                delta.y + mouseDown.angle.phi));
+          sight.theta = - delta.x + mouseDown.sight.theta;
+          sight.phi = Math.min(90, Math.max(0,
+                delta.y + mouseDown.sight.phi));
         }
       }
 
-      camera.position.x = Math.sin( rad(angle.theta) ) * Math.cos( rad(angle.phi) );
-      camera.position.y = Math.sin( rad(angle.phi) );
-      camera.position.z = Math.cos( rad(angle.theta) ) * Math.cos( rad(angle.phi) );
-      camera.position.multiplyScalar(radious);
-      camera.position.add(lookAt);
+      camera.position.x = Math.sin( rad(sight.theta) ) * Math.cos( rad(sight.phi) );
+      camera.position.y = Math.sin( rad(sight.phi) );
+      camera.position.z = Math.cos( rad(sight.theta) ) * Math.cos( rad(sight.phi) );
+      camera.position.multiplyScalar(sight.radious);
+      camera.position.add(sight.lookAt);
 
       camera.updateMatrix();
-      camera.lookAt( lookAt );
+      camera.lookAt( sight.lookAt );
 
       input.update();
     };
