@@ -6,6 +6,7 @@ angular.module('elevation.terrain', [])
 
 .directive('evTerrainViewer', function($cordovaGeolocation,
                                        $log,
+                                       $q,
                                        $window,
                                        TerrainViewer,
                                        MapImageService,
@@ -31,53 +32,51 @@ angular.module('elevation.terrain', [])
         var bounds = scope.route.bounds;
         var route = getRoute(scope.route);
 
-        var terrian = {imageUrl: null, coordGrid: null};
-        function callback(imageUrl, coordGrid) {
-          if (imageUrl) {
-            terrian.imageUrl = imageUrl;
-          }
-          if (coordGrid) {
-            terrian.coordGrid = coordGrid;
-          }
-
-          if (terrian.imageUrl && terrian.coordGrid) {
-            $log.debug("view terrian");
-            var viewer = new TerrainViewer(element[0]);
-            viewer.setTerrain(terrian.imageUrl, bounds.northeast.lng, bounds.southwest.lng, bounds.southwest.lat, bounds.northeast.lat);
-            viewer.setRoute(route);
-            viewer.setCoordGrid(terrian.coordGrid, row, col);
-            viewer.setup();
-          }
-        }
-
-        MapImageService.getMapImage(bounds)
-          .then(function(imageData) {
-            $log.debug('Got image data', imageData.width, imageData.height);
-            $log.debug('Bounds', bounds);
-            callback(imageData.dataUrl, null);
-          }, function(err) {
-            $log.error(err);
-          });
-
         var row = 10;
         var col = 10;
-        MeshElevations.search(bounds, row, col, function(points) {
-          $log.log(points);
-          if (!points) {
-            alert("failed");
-          } else {
-            var elevs = [];
-            points.forEach(function(point) {
-              elevs.push(point.elevation);
-            });
-            callback(null, elevs);
-          }
-        });
 
-
+        var terrainPromises = {
+          imageUrl: getMapImage(bounds),
+          coordGrid: getElevations(bounds, row, col)
+        };
+        $q.all(terrainPromises)
+          .then(function(terrain) {
+            $log.debug('Let us view terrain!');
+            var viewer = new TerrainViewer(element[0]);
+            viewer.setTerrain(terrain.imageUrl,
+                              bounds.northeast.lng,
+                              bounds.southwest.lng,
+                              bounds.southwest.lat,
+                              bounds.northeast.lat);
+            viewer.setRoute(route);
+            viewer.setCoordGrid(terrain.coordGrid, row, col);
+            viewer.setup();
+          });
       });
     }
   };
+
+  function getMapImage(bounds) {
+    return MapImageService.getMapImage(bounds)
+      .then(function(imageData) {
+        $log.debug('Got image data', imageData.width, imageData.height);
+        $log.debug('Bounds', bounds);
+        return imageData.dataUrl;
+      }, function(err) {
+        $log.error(err);
+        return $q.reject(err);
+      });
+  }
+
+  function getElevations(bounds, row, col) {
+    return MeshElevations.search(bounds, row, col)
+      .then(function(points) {
+        $log.debug(points);
+        return points.map(function(point) {
+          return point.elevation;
+        });
+      });
+  }
 
   function getCenter(bounds) {
     var lat = (bounds.southwest.lat + bounds.northeast.lat) / 2;
@@ -107,7 +106,6 @@ angular.module('elevation.terrain', [])
     });
     return result;
   }
-
 })
 
 .factory('MapImageService', function($log,
@@ -327,35 +325,44 @@ angular.module('elevation.terrain', [])
   return $window.TerrainViewer;
 })
 
-.factory('MeshElevations', function($log, Elevations) {
+.factory('MeshElevations', function($log, $q, Elevations) {
   return {
     search: getElevations
   };
 
-  function getElevations(bounds, row, col, callback) {
+  function getElevations(bounds, row, col) {
+    var deferred = $q.defer();
     var data = prepareElevationsData(bounds, row, col);
 
     var elevationService = new ElevationService();
-    elevationService.elevation(data, callback);
+    elevationService.elevation(data, function(points) {
+      if (!points) {
+        deferred.reject('Failed to get elevations');
+        return;
+      }
+      deferred.resolve(points);
+    });
+
+    return deferred.promise;
   }
 
   function prepareElevationsData(bounds, row, col) {
     var result = [];
 
     // TODO: 地図の大きさに合わせる？
-    var lat_step = (bounds.southwest.lat - bounds.northeast.lat) / row;
-    var lng_step = (bounds.southwest.lng - bounds.northeast.lng) / col;
+    var latStep = (bounds.southwest.lat - bounds.northeast.lat) / row;
+    var lngStep = (bounds.southwest.lng - bounds.northeast.lng) / col;
 
     var lat = bounds.southwest.lat;
     for (var ii = 0; ii <= col; ii++) {
-    var lng = bounds.southwest.lng;
+      var lng = bounds.southwest.lng;
       for (var i = 0; i <= row; i++) {
         result.push(
           new google.maps.LatLng(lat, lng)
         );
-        lng += lng_step;
+        lng += lngStep;
       }
-      lat += lat_step;
+      lat += latStep;
     };
 
     $log.debug('prepareElevations', result);
