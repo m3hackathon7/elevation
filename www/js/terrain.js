@@ -89,17 +89,17 @@ angular.module('elevation.terrain', [])
     var result = [];
     route.legs.forEach(function(leg, i, legs) {
       leg.steps.forEach(function(step, j, steps) {
-        // TODO: Decode step.polyline.points.
-        result.push({
-          lat: step.start_location.lat,
-          lon: step.start_location.lng
+        var decoded = google.maps.geometry.encoding.decodePath(step.polyline.points);
+        var coords = decoded.map(function(latlng) {
+          // TODO: Can't we just use `lng` instead of `lon`?
+          return { lat: latlng.lat(), lon: latlng.lng() };
         });
 
         if (i === legs.length - 1 && j === steps.length - 1) {
-          result.push({
-            lat: step.end_location.lat,
-            lon: step.end_location.lng
-          });
+          result = result.concat(coords);
+        } else {
+          // Avoid duplicating last point.
+          result = result.concat(coords.slice(0, coords.length - 1));
         }
       });
     });
