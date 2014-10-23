@@ -372,7 +372,8 @@ angular.module('elevation.terrain', [])
     var lngStep = (bounds.northeast.lng - bounds.southwest.lng) / cols;
 
     var result = [];
-    for (var row = 0; row <= rows; row++) {
+    // 北から南へ、西から東への方向。
+    for (var row = rows; row >= 0; row--) {
       for (var col = 0; col <= cols; col++) {
         result.push(new google.maps.LatLng(
           bounds.southwest.lat + latStep * col,
