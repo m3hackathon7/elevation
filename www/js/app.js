@@ -65,7 +65,7 @@ angular.module('elevation', [
     });
   };
 
-  watchID = $cordovaGeolocation.watchPosition({
+  var watchID = $cordovaGeolocation.watchPosition({
     frequency : 1000,
     timeout : 3000,
     enableHighAccuracy: true
