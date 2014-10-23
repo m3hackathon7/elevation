@@ -346,9 +346,10 @@
 
 
       $r.register('c:camera', function() {
+        var tr = self.terrain;
         var camera = new THREE.PerspectiveCamera( 45,
         window.innerWidth / window.innerHeight,
-        1, 10000 );
+        1, Math.max(tr.width, tr.height) + 5000 );
         camera.position.y = 200;
         return camera;
       });
@@ -517,8 +518,8 @@
           var eye = new THREE.Vector3().subVectors( camera.position, sight.lookAt );
           var objectUp = new THREE.Vector3();
           var pan = new THREE.Vector3();
-          pan.copy(eye).cross(camera.up).setLength(delta.x);
-          pan.add(objectUp.copy(camera.up).setLength(delta.y));
+          pan.copy(eye).cross(camera.up).setLength(delta.x * Math.max(1, sight.radious / 1000));
+          pan.add(objectUp.copy(camera.up).setLength(delta.y * Math.max(1, sight.radious / 1000)));
 
           sight.lookAt.copy( mouseDown.sight.lookAt ).add(pan);
 
