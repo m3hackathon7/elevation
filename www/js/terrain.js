@@ -31,12 +31,12 @@ angular.module('elevation.terrain', [])
         // TODO: Add some margin.
         var bounds = scope.route.bounds;
 
-        var row = 10;
-        var col = 10;
+        var rows = 10;
+        var cols = 10;
 
         var terrainPromises = {
           imageUrl: getMapImage(bounds),
-          coordGrid: getElevations(bounds, row, col),
+          coordGrid: getElevations(bounds, rows, cols),
           route: fillRouteElevation(getRoute(scope.route))
         };
         $q.all(terrainPromises)
@@ -50,7 +50,7 @@ angular.module('elevation.terrain', [])
                               bounds.southwest.lat,
                               bounds.northeast.lat);
             viewer.setRoute(terrain.route);
-            viewer.setCoordGrid(terrain.coordGrid, row, col);
+            viewer.setCoordGrid(terrain.coordGrid, rows, cols);
             viewer.setup();
           });
       });
@@ -69,8 +69,8 @@ angular.module('elevation.terrain', [])
       });
   }
 
-  function getElevations(bounds, row, col) {
-    return MeshElevations.search(bounds, row, col)
+  function getElevations(bounds, rows, cols) {
+    return MeshElevations.search(bounds, rows, cols)
       .then(function(points) {
         $log.debug(points);
         return points.map(function(point) {
@@ -352,10 +352,10 @@ angular.module('elevation.terrain', [])
 
   function getElevations(bounds, row, col) {
     var deferred = $q.defer();
-    var data = prepareElevationsData(bounds, row, col);
+    var latlngs = prepareLatLngs(bounds, row, col);
 
     var elevationService = new ElevationService();
-    elevationService.elevation(data, function(points) {
+    elevationService.elevation(latlngs, function(points) {
       if (!points) {
         deferred.reject('Failed to get elevations');
         return;
@@ -366,26 +366,22 @@ angular.module('elevation.terrain', [])
     return deferred.promise;
   }
 
-  function prepareElevationsData(bounds, row, col) {
-    var result = [];
-
+  function prepareLatLngs(bounds, rows, cols) {
     // TODO: 地図の大きさに合わせる？
-    var latStep = (bounds.southwest.lat - bounds.northeast.lat) / row;
-    var lngStep = (bounds.southwest.lng - bounds.northeast.lng) / col;
+    var latStep = (bounds.northeast.lat - bounds.southwest.lat) / rows;
+    var lngStep = (bounds.northeast.lng - bounds.southwest.lng) / cols;
 
-    var lat = bounds.southwest.lat;
-    for (var ii = 0; ii <= col; ii++) {
-      var lng = bounds.southwest.lng;
-      for (var i = 0; i <= row; i++) {
-        result.push(
-          new google.maps.LatLng(lat, lng)
-        );
-        lng += lngStep;
+    var result = [];
+    for (var row = 0; row <= rows; row++) {
+      for (var col = 0; col <= cols; col++) {
+        result.push(new google.maps.LatLng(
+          bounds.southwest.lat + latStep * col,
+          bounds.southwest.lng + lngStep * row
+        ));
       }
-      lat += latStep;
-    };
+    }
 
-    $log.debug('prepareElevations', result);
+    $log.debug('Prepared LatLngs:', result);
     return result;
   }
 });
