@@ -22,57 +22,58 @@ angular.module('elevation.route', [])
   };
 })
 
-.factory('apiUrls', function() {
-  // API proxy for browser testing.
-  if (!window.cordova) {
-    return {
-      routes:    'http://localhost:3333/routes',
-      elevation: 'http://localhost:3333/elevations'
-    };
-  } else {
-    return {
-      routes:    'https://maps.googleapis.com/maps/api/directions/json',
-      elevation: 'https://maps.googleapis.com/maps/api/elevation/json'
-    };
-  }
-})
+.provider('Routes', function() {
+  var url = 'https://maps.googleapis.com/maps/api/directions/json';
 
-.factory('Routes', function($http, apiUrls) {
-  function search(from, to) {
-    var params = {
-      origin: from,
-      destination: to,
-      sensor: false
-    };
-    return $http.get(apiUrls.routes, { params: params })
-      .then(function(response) {
-        return response.data.routes[0];
-      });
-  }
+  this.setUrl = function(newUrl) {
+    url = newUrl;
+  };
 
-  return {
-    search: search
+  this.$get = function($http) {
+    return {
+      search: search
+    };
+
+    function search(from, to) {
+      var params = {
+        origin: from,
+        destination: to,
+        sensor: false
+      };
+      return $http.get(url, { params: params })
+        .then(function(response) {
+          return response.data.routes[0];
+        });
+    }
   };
 })
 
-.factory('Elevations', function($http, $log, apiUrls) {
-  function search(points) {
-    var locations = points.map(function(point) {
-      return [point.lat, point.lng].join(',');
-    }).join('|');
-    var params = {
-      locations: locations
-    };
-    $log.debug('locations length:', locations.length, 'points:', points.length);
-    $log.debug(locations);
-    return $http.get(apiUrls.elevation, { params: params })
-      .then(function(response) {
-        return response.data;
-      });
-  }
+.provider('Elevations', function() {
+  var url = 'https://maps.googleapis.com/maps/api/elevation/json';
 
-  return {
-    search: search
+  this.setUrl = function(newUrl) {
+    url = newUrl;
+  };
+
+  this.$get = function($http, $log) {
+    return {
+      search: search
+    };
+
+    function search(points) {
+      var locations = points.map(function(point) {
+        return [point.lat, point.lng].join(',');
+      }).join('|');
+      var params = {
+        locations: locations
+      };
+      $log.debug('locations length:', locations.length, 'points:', points.length);
+      $log.debug(locations);
+      return $http.get(url, { params: params })
+        .then(function(response) {
+          return response.data;
+        });
+    }
   };
 })
 

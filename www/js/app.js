@@ -20,6 +20,14 @@ angular.module('elevation', [
   });
 })
 
+.config(function(RoutesProvider, ElevationsProvider) {
+  // Use API proxy for browser testing.
+  if (!window.cordova) {
+    RoutesProvider.setUrl('http://localhost:3333/routes');
+    ElevationsProvider.setUrl('http://localhost:3333/elevations');
+  }
+})
+
 .controller('RootCtrl', function($scope,
                                  $log,
                                  $ionicPopup,
