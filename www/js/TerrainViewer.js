@@ -102,7 +102,6 @@
     });
 
     on('keydown', function(event) {
-      event.preventDefault();
       switch( event.keyCode ) {
         case 16: self.current.isShiftDown = true; break;
         case 17: self.current.isCtrlDown = true; break;
