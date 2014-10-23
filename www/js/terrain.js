@@ -30,26 +30,28 @@ angular.module('elevation.terrain', [])
 
         // TODO: Add some margin.
         var bounds = scope.route.bounds;
-        var route = getRoute(scope.route);
 
-        var row = 10;
-        var col = 10;
+        // Get the best out of the API limit!
+        var rows = 21;
+        var cols = 22;
 
         var terrainPromises = {
           imageUrl: getMapImage(bounds),
-          coordGrid: getElevations(bounds, row, col)
+          coordGrid: getElevations(bounds, rows, cols),
+          route: fillRouteElevation(getRoute(scope.route))
         };
         $q.all(terrainPromises)
           .then(function(terrain) {
             $log.debug('Let us view terrain!');
+            $log.debug('Route:', terrain.route);
             var viewer = new TerrainViewer(element[0]);
             viewer.setTerrain(terrain.imageUrl,
                               bounds.northeast.lng,
                               bounds.southwest.lng,
                               bounds.southwest.lat,
                               bounds.northeast.lat);
-            viewer.setRoute(route);
-            viewer.setCoordGrid(terrain.coordGrid, row, col);
+            viewer.setRoute(terrain.route, 50);
+            viewer.setCoordGrid(terrain.coordGrid, rows, cols, 3);
             viewer.setup();
           });
       });
@@ -68,8 +70,8 @@ angular.module('elevation.terrain', [])
       });
   }
 
-  function getElevations(bounds, row, col) {
-    return MeshElevations.search(bounds, row, col)
+  function getElevations(bounds, rows, cols) {
+    return MeshElevations.search(bounds, rows, cols)
       .then(function(points) {
         $log.debug(points);
         return points.map(function(point) {
@@ -88,23 +90,42 @@ angular.module('elevation.terrain', [])
     var result = [];
     route.legs.forEach(function(leg, i, legs) {
       leg.steps.forEach(function(step, j, steps) {
-        // TODO: Decode step.polyline.points.
-        result.push({
-          lat: step.start_location.lat,
-          lon: step.start_location.lng,
-          elev: 0
+        var decoded = google.maps.geometry.encoding.decodePath(step.polyline.points);
+        var coords = decoded.map(function(latlng) {
+          // TODO: Can't we just use `lng` instead of `lon`?
+          return { lat: latlng.lat(), lon: latlng.lng() };
         });
 
         if (i === legs.length - 1 && j === steps.length - 1) {
-          result.push({
-            lat: step.end_location.lat,
-            lon: step.end_location.lng,
-            elev: 0
-          });
+          result = result.concat(coords);
+        } else {
+          // Avoid duplicating last point.
+          result = result.concat(coords.slice(0, coords.length - 1));
         }
       });
     });
     return result;
+  }
+
+  function fillRouteElevation(route) {
+    var deferred = $q.defer();
+    var latlngs = route.map(function(point) {
+      return new google.maps.LatLng(point.lat, point.lon);
+    });
+    var elevationService = new ElevationService();
+    elevationService.elevation(latlngs, function(points) {
+      if (!points) {
+        deferred.reject('Failed to get elevations');
+        return;
+      }
+      // TODO: Take immutable way.
+      result = route.forEach(function(point, i) {
+        console.log(points[i]);
+        point.elev = points[i].elevation;
+      });
+      deferred.resolve(route);
+    });
+    return deferred.promise;
   }
 })
 
@@ -332,10 +353,10 @@ angular.module('elevation.terrain', [])
 
   function getElevations(bounds, row, col) {
     var deferred = $q.defer();
-    var data = prepareElevationsData(bounds, row, col);
+    var latlngs = prepareLatLngs(bounds, row, col);
 
     var elevationService = new ElevationService();
-    elevationService.elevation(data, function(points) {
+    elevationService.elevation(latlngs, function(points) {
       if (!points) {
         deferred.reject('Failed to get elevations');
         return;
@@ -346,26 +367,23 @@ angular.module('elevation.terrain', [])
     return deferred.promise;
   }
 
-  function prepareElevationsData(bounds, row, col) {
-    var result = [];
-
+  function prepareLatLngs(bounds, rows, cols) {
     // TODO: 地図の大きさに合わせる？
-    var latStep = (bounds.southwest.lat - bounds.northeast.lat) / row;
-    var lngStep = (bounds.southwest.lng - bounds.northeast.lng) / col;
+    var latStep = (bounds.northeast.lat - bounds.southwest.lat) / rows;
+    var lngStep = (bounds.northeast.lng - bounds.southwest.lng) / cols;
 
-    var lat = bounds.southwest.lat;
-    for (var ii = 0; ii <= col; ii++) {
-      var lng = bounds.southwest.lng;
-      for (var i = 0; i <= row; i++) {
-        result.push(
-          new google.maps.LatLng(lat, lng)
-        );
-        lng += lngStep;
+    var result = [];
+    // 北から南へ、西から東への方向。
+    for (var row = rows; row >= 0; row--) {
+      for (var col = 0; col <= cols; col++) {
+        result.push(new google.maps.LatLng(
+          bounds.southwest.lat + latStep * row,
+          bounds.southwest.lng + lngStep * col
+        ));
       }
-      lat += latStep;
-    };
+    }
 
-    $log.debug('prepareElevations', result);
+    $log.debug('Prepared LatLngs:', result);
     return result;
   }
 });
