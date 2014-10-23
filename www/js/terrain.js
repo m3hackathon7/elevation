@@ -31,8 +31,9 @@ angular.module('elevation.terrain', [])
         // TODO: Add some margin.
         var bounds = scope.route.bounds;
 
-        var rows = 10;
-        var cols = 10;
+        // Get the best out of the API limit!
+        var rows = 22;
+        var cols = 23;
 
         var terrainPromises = {
           imageUrl: getMapImage(bounds),
