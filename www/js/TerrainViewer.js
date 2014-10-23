@@ -164,6 +164,7 @@
 
 
     on('gesturestart', function(event) {
+      self.current.scale = event.scale;
       self.updateGestureStart();
     });
 
