@@ -74,9 +74,6 @@ angular.module('elevation', [
     function(error) {
       $log.error(error);
     }, function(position) {
-      if (!self.position) {
-        self.center = position;
-      }
       self.position = position;
     });
 

@@ -88,7 +88,6 @@ angular.module('elevation.route', [])
   return {
     restrict: 'E',
     scope: {
-      center: '=',
       route: '=',
       position: '='
     },
@@ -104,26 +103,27 @@ angular.module('elevation.route', [])
       // Map information retention.
       self.map = map;
 
-      scope.$watch('center', function() {
-        if (scope.center) {
-          moveMap(scope.center);
-        }
-      });
       scope.$watch('route', function() {
         if (scope.route && scope.route.legs) {
           showRoute(scope.route);
         }
       });
-      scope.$watch('position', function() {
+      scope.$watch('position', function(newValue, oldValue) {
+        if (!oldValue) {
+          // 初回だけ現在地を中心にする
+          moveMap(scope.position);
+        }
         if (scope.position) {
           // TODO: 現在地を更新
         }
       })
 
       function moveMap(position) {
-        var latlng = positionToLatLng(position);
-        map.panTo(latlng);
-        addMarker(latlng);
+        if (position) {
+          var latlng = positionToLatLng(position);
+          map.panTo(latlng);
+          addMarker(latlng);
+        }
       }
 
       function showRoute(route) {
