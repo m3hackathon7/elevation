@@ -387,13 +387,15 @@
 
 
       $r.register('g:cursor', function() {
-        var geo = new THREE.CylinderGeometry(50, 0, 100);
+        var geo = new THREE.CylinderGeometry(50, 0, 100, 4);
         geo.applyMatrix(new THREE.Matrix4().makeTranslation(0, 50, 0));
         return geo;
       });
 
       $r.register('m:cursor', function() {
-        return new THREE.MeshBasicMaterial({ color: 0x90D0D0, opacity: 0.7});
+        return new THREE.MeshBasicMaterial({ color: 0x90D0D0, opacity: 0.85,
+          shading: THREE.FlatShading, transparent: true
+        });
       });
 
       $r.register('o:cursor', function() {
@@ -486,6 +488,10 @@
     var mouseDown = {};
 
     function update(scene) {
+
+      var cursor = $r.get('o:cursor');
+      cursor.rotation.y = cursor.rotation.y + rad(3);
+
       var camera = $r.get('c:camera');
 
       if (input.isMousePress()) {
