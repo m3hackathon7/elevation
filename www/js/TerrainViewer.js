@@ -477,7 +477,7 @@
       var cursor = $r.get('o:cursor');
       var meter = this.relativeFromCenter(lat, lon);
       cursor.position.x = meter.x;
-      cursor.position.z = - meter.y;
+      cursor.position.z = - meter.y * self.terrain.elevationScale + self.elevationOffset;
       cursor.position.y = elev;
     };
 
