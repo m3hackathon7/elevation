@@ -100,8 +100,6 @@ angular.module('elevation.route', [])
         zoom: 14,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       });
-      // Map information retention.
-      self.map = map;
 
       scope.$watch('route', function() {
         if (scope.route && scope.route.legs) {
@@ -109,12 +107,15 @@ angular.module('elevation.route', [])
         }
       });
       scope.$watch('position', function(newValue, oldValue) {
-        if (!oldValue) {
-          // 初回だけ現在地を中心にする
-          moveMap(scope.position);
-        }
         if (scope.position) {
-          // TODO: 現在地を更新
+          var latlng = positionToLatLng(scope.position);
+          if (!oldValue) {
+            // 初回だけ現在地を中心にする
+            map.panTo(latlng);
+            marker = addMarker(latlng);
+          } else {
+            marker.setPosition(latlng);
+          }
         }
       })
 
