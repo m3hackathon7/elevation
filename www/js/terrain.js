@@ -50,8 +50,8 @@ angular.module('elevation.terrain', [])
                               bounds.southwest.lng,
                               bounds.southwest.lat,
                               bounds.northeast.lat);
-            viewer.setRoute(terrain.route);
-            viewer.setCoordGrid(terrain.coordGrid, rows, cols);
+            viewer.setRoute(terrain.route, 50);
+            viewer.setCoordGrid(terrain.coordGrid, rows, cols, 3);
             viewer.setup();
           });
       });

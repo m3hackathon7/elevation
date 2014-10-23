@@ -213,7 +213,7 @@
   */
   function TerrainViewer(container) {
     // 地形の地図画像とサイズを指定
-    this.terrain = { image: null, width: 0, height: 0 };
+    this.terrain = { image: null, width: 0, height: 0, elevationScale: 1 };
     this.setTerrain = function(image, eastLng, westLng, southLat, northLat) {
       this.terrain.image = image;
 
@@ -245,11 +245,12 @@
 
     // 地形の座標
     this.terrain.coordGrid = [];
-    this.setCoordGrid = function(coordGrid, width, height) {
+    this.setCoordGrid = function(coordGrid, width, height, elevationScale) {
       console.log(coordGrid.length, width, height);
-      this.terrain.coordGrid = coordGrid.map(function(elev) { return elev * 10; });
+      this.terrain.coordGrid = coordGrid;
       this.terrain.coordGridWidth = width;
       this.terrain.coordGridHeight = height;
+      this.terrain.elevationScale = elevationScale || this.terrain.elevationScale;
     };
 
     // 地図座標系と描画座標系の変換晩率
@@ -260,8 +261,10 @@
 
     // 経路パス
     this.route = [];
-    this.setRoute = function(route) {
+    this.elevationOffset = 0;
+    this.setRoute = function(route, elevationOffset) {
       this.route = route;
+      this.elevationOffset = elevationOffset || this.elevationOffset;
     };
 
     // 中心点からの相対位置をメートルで取得
@@ -326,9 +329,9 @@
             tr.width, tr.height, tr.coordGridWidth , tr.coordGridHeight  );
         geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
 
-        for ( var i = 0, l = geometry.vertices.length; i < l; i ++ ) {
-          geometry.vertices[ i ].y = tr.coordGrid[ i ];
-        }
+        geometry.vertices.forEach(function(vertex, i) {
+          vertex.y = tr.coordGrid[ i ] * tr.elevationScale;
+        });
 
         geometry.computeFaceNormals();
         geometry.computeVertexNormals();
@@ -356,8 +359,11 @@
           var point = self.route[i];
           var pos = self.relativeFromCenter(point.lat, point.lon);
           // 地図とかぶらないように少し浮かせる。
-          geometry.vertices[ i ] =
-            new THREE.Vector3( pos.x, point.elev * 10 + 1, - pos.y );
+          geometry.vertices[ i ] = new THREE.Vector3(
+            pos.x,
+            point.elev * self.terrain.elevationScale + self.elevationOffset,
+            -pos.y
+          );
 
           colors[i] = new THREE.Color( 0xffffff );
           colors[i].setHSL( 0.6, 1.0, i / l * 0.5 + 0.5 );
