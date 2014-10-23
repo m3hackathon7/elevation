@@ -32,8 +32,8 @@ angular.module('elevation.terrain', [])
         var bounds = scope.route.bounds;
 
         // Get the best out of the API limit!
-        var rows = 22;
-        var cols = 23;
+        var rows = 21;
+        var cols = 22;
 
         var terrainPromises = {
           imageUrl: getMapImage(bounds),
@@ -377,8 +377,8 @@ angular.module('elevation.terrain', [])
     for (var row = rows; row >= 0; row--) {
       for (var col = 0; col <= cols; col++) {
         result.push(new google.maps.LatLng(
-          bounds.southwest.lat + latStep * col,
-          bounds.southwest.lng + lngStep * row
+          bounds.southwest.lat + latStep * row,
+          bounds.southwest.lng + lngStep * col
         ));
       }
     }
