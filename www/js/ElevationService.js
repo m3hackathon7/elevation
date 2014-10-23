@@ -3,7 +3,7 @@
 //---------------------------------
 
 function ElevationService() {
-  this.LIMIT_SIZE = 100;
+  this.LIMIT_SIZE = 256;
 
   this.ELEV_STATUS_MSGS = {};
   this.ELEV_STATUS_MSGS[google.maps.ElevationStatus.INVALID_REQUEST] =
