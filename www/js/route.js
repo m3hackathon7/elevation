@@ -89,7 +89,8 @@ angular.module('elevation.route', [])
     restrict: 'E',
     scope: {
       center: '=',
-      route: '='
+      route: '=',
+      position: '='
     },
     link: function(scope, element, attrs) {
       var polyline;
@@ -113,6 +114,11 @@ angular.module('elevation.route', [])
           showRoute(scope.route);
         }
       });
+      scope.$watch('position', function() {
+        if (scope.position) {
+          // TODO: 現在地を更新
+        }
+      })
 
       function moveMap(position) {
         var latlng = positionToLatLng(position);

@@ -65,17 +65,19 @@ angular.module('elevation', [
     });
   };
 
-  $cordovaGeolocation.getCurrentPosition()
-    .then(function(position) {
-      $log.debug('current location', position);
-      self.currentPosition = position;
-    }, function(error) {
+  watchID = $cordovaGeolocation.watchPosition({
+    frequency : 1000,
+    timeout : 3000,
+    enableHighAccuracy: true
+  });
+  watchID.promise.then(function()  { /* Not  used */ },
+    function(error) {
       $log.error(error);
-      $ionicPopup.alert({
-        title: 'Error',
-        template: error.toString()
-      });
-      self.currentPosition = null;
+    }, function(position) {
+      if (!self.position) {
+        self.center = position;
+      }
+      self.position = position;
     });
 
   self.setCurrentLocation = function(fromOrTo) {

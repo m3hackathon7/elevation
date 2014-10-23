@@ -3,7 +3,7 @@
     <button ng-click="root.showSearchPopup()" class="button icon ion-search"></button>
   </ion-nav-buttons>
   <ion-content>
-    <ev-google-map class="route-map" center="root.currentPosition" route="root.route"></ev-google-map>
+    <ev-google-map class="route-map" center="root.center" route="root.route" position="root.position"></ev-google-map>
 
     <ev-elevation-chart class="elevation-chart" route="root.route"></ev-elevation-chart>
 
