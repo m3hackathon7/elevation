@@ -9,13 +9,15 @@
     return degree * Math.PI / 180;
   }
 
-  var DEGREE_TO_METER = 6378150 * 2 * Math.PI / 360;
+  var EARTH_RADIUS = 6378150;
+  var DEGREE_TO_METER = EARTH_RADIUS * 2 * Math.PI / 360;
 
   // 経度・経度からメートル座標に変換
   function coordToMeter(latitude, longitude) {
     return {
       x: DEGREE_TO_METER * longitude,
-      y: DEGREE_TO_METER * latitude // TODO: メルカトル図法計算
+      y: EARTH_RADIUS * Math.log(
+          Math.tan(rad(latitude/ 2 + 45))) // TODO: メルカトル図法計算
     };
   }
 
