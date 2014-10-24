@@ -2,11 +2,13 @@
 
 ![アイコン](icon.png)
 
-Ionic を使った Cordova アプリです。ひとまず、ルート検索結果の標高を表示します。
+Ionic を使った Cordova アプリです。ルート検索結果の周囲の地形を見ることができます。
 
 ![ルート検索](screenshot-search.png)
 
 ![検索結果](screenshot-result.png)
+
+![3D 地形表示](screenshot-terrain.png)
 
 ## Setup
 
