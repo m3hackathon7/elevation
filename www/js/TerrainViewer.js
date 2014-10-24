@@ -215,7 +215,7 @@
   */
   function TerrainViewer(container) {
     // 地形の地図画像とサイズを指定
-    this.terrain = { image: null, width: 0, height: 0, elevationScale: 1 };
+    this.terrain = { image: null, width: 0, height: 0, elevationScale: 0, elevationTargetScale: 1 };
     this.setTerrain = function(image, eastLng, westLng, southLat, northLat) {
       this.terrain.image = image;
 
@@ -252,7 +252,7 @@
       this.terrain.coordGrid = coordGrid;
       this.terrain.coordGridWidth = width;
       this.terrain.coordGridHeight = height;
-      this.terrain.elevationScale = elevationScale || this.terrain.elevationScale;
+      this.terrain.elevationTargetScale = elevationScale || this.terrain.elevationTargetScale;
     };
 
     // 地図座標系と描画座標系の変換晩率
@@ -277,7 +277,6 @@
         y: meter.y - this.terrain.center.y
       };
     };
-
 
     var self = this;
     var $r = new Resources();
@@ -336,11 +335,10 @@
 
         var geometry = new THREE.PlaneGeometry(
             tr.width, tr.height, tr.coordGridWidth , tr.coordGridHeight  );
+        geometry.dynamic = true;
         geometry.applyMatrix( new THREE.Matrix4().makeRotationX( - Math.PI / 2 ) );
 
-        geometry.vertices.forEach(function(vertex, i) {
-          vertex.y = tr.coordGrid[ i ] * tr.elevationScale;
-        });
+        updateTerrain(geometry);
 
         geometry.computeFaceNormals();
         geometry.computeVertexNormals();
@@ -412,6 +410,34 @@
 
     }
 
+    function updateElevation() {
+      if (self.terrain.elevationScale < self.terrain.elevationTargetScale) {
+        self.terrain.elevationScale += 0.05;
+
+        updateTerrain($r.get('g:terrain'));
+        updateCursor($r.get('o:cursor'));
+        updateRoute($r.get('g:route'));
+      }
+    }
+
+    function updateTerrain(geometry) {
+      geometry.vertices.forEach(function(vertex, i) {
+        vertex.y = self.terrain.coordGrid[ i ] * self.terrain.elevationScale;
+     });
+      geometry.verticesNeedUpdate = true;
+    }
+
+    function updateCursor(cursor) {
+      cursor.position.y = self.cursorElev * self.terrain.elevationScale + self.elevationOffset;
+    }
+
+    function updateRoute(geometry) {
+      for (var i = 0, l = self.route.length; i < l; i++) {
+        var point = self.route[i];
+        geometry.vertices[ i ].y = point.elev * self.terrain.elevationScale + self.elevationOffset;
+      }
+    }
+
     // メインシーン
     this.createScene = function() {
 
@@ -481,11 +507,12 @@
     };
 
     this.setCursorPosition = function(lat, lon, elev) {
+      self.cursorElev = elev;
       var cursor = $r.get('o:cursor');
       var meter = this.relativeFromCenter(lat, lon);
       cursor.position.x = meter.x;
-      cursor.position.z = - meter.y * self.terrain.elevationScale + self.elevationOffset;
-      cursor.position.y = elev;
+      cursor.position.z = - meter.y;
+      updateCursor(cursor);
     };
 
 
@@ -496,6 +523,8 @@
       cursor.rotation.y = cursor.rotation.y + rad(3);
 
       var camera = $r.get('c:camera');
+
+      updateElevation();
 
       if (input.isMousePress()) {
         mouseDown.sight = _.clone(sight);
