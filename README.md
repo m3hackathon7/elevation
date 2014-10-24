@@ -4,6 +4,10 @@
 
 Ionic を使った Cordova アプリです。ルート検索結果の周囲の地形を見ることができます。
 
+2014 年 10 月 の M3 Hackathon で開発しました。
+
+[資料はこちら](https://github.com/m3hackathon7/m3hackathon7/wiki)
+
 ![ルート検索](screenshot-search.png)
 
 ![検索結果](screenshot-result.png)
