@@ -20,6 +20,14 @@ angular.module('elevation', [
   });
 })
 
+.config(function(RoutesProvider, ElevationsProvider) {
+  // Use API proxy for browser testing.
+  if (!window.cordova) {
+    RoutesProvider.setUrl('http://localhost:3333/routes');
+    ElevationsProvider.setUrl('http://localhost:3333/elevations');
+  }
+})
+
 .controller('RootCtrl', function($scope,
                                  $log,
                                  $ionicPopup,
@@ -66,8 +74,8 @@ angular.module('elevation', [
   };
 
   var watchID = $cordovaGeolocation.watchPosition({
-    frequency : 1000,
-    timeout : 3000,
+    frequency : 10000,
+    timeout : 5000,
     enableHighAccuracy: true
   });
   watchID.promise.then(function()  { /* Not  used */ },

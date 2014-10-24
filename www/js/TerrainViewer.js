@@ -9,13 +9,15 @@
     return degree * Math.PI / 180;
   }
 
-  var DEGREE_TO_METER = 6378150 * 2 * Math.PI / 360;
+  var EARTH_RADIUS = 6378150;
+  var DEGREE_TO_METER = EARTH_RADIUS * 2 * Math.PI / 360;
 
   // 経度・経度からメートル座標に変換
   function coordToMeter(latitude, longitude) {
     return {
       x: DEGREE_TO_METER * longitude,
-      y: DEGREE_TO_METER * latitude // TODO: メルカトル図法計算
+      y: EARTH_RADIUS * Math.log(
+          Math.tan(rad(latitude/ 2 + 45))) // TODO: メルカトル図法計算
     };
   }
 
@@ -102,7 +104,6 @@
     });
 
     on('keydown', function(event) {
-      event.preventDefault();
       switch( event.keyCode ) {
         case 16: self.current.isShiftDown = true; break;
         case 17: self.current.isCtrlDown = true; break;
@@ -163,6 +164,7 @@
 
 
     on('gesturestart', function(event) {
+      self.current.scale = event.scale;
       self.updateGestureStart();
     });
 
@@ -280,9 +282,16 @@
     var self = this;
     var $r = new Resources();
     var input = new Input(container);
+    var sight = {
+      theta: 0, phi: 15, radious: 50000,
+      lookAt: new THREE.Vector3()
+    };
+    var mouseDown = {};
+
 
     this.setup = function() {
       this.initResources();
+      sight.radious = Math.max(self.terrain.width, self.terrain.height) / 2 + 100,
       this.draw();
     };
 
@@ -344,9 +353,10 @@
 
 
       $r.register('c:camera', function() {
+        var tr = self.terrain;
         var camera = new THREE.PerspectiveCamera( 45,
-        window.innerWidth / window.innerHeight,
-        1, 10000 );
+            window.innerWidth / window.innerHeight,
+            1, Math.max(10000, Math.max(tr.width, tr.height) + 5000) );
         camera.position.y = 200;
         return camera;
       });
@@ -385,13 +395,15 @@
 
 
       $r.register('g:cursor', function() {
-        var geo = new THREE.CylinderGeometry(50, 0, 100);
+        var geo = new THREE.CylinderGeometry(50, 0, 100, 4);
         geo.applyMatrix(new THREE.Matrix4().makeTranslation(0, 50, 0));
         return geo;
       });
 
       $r.register('m:cursor', function() {
-        return new THREE.MeshBasicMaterial({ color: 0x90D0D0, opacity: 0.7});
+        return new THREE.MeshBasicMaterial({ color: 0x90D0D0, opacity: 0.85,
+          shading: THREE.FlatShading, transparent: true
+        });
       });
 
       $r.register('o:cursor', function() {
@@ -472,18 +484,17 @@
       var cursor = $r.get('o:cursor');
       var meter = this.relativeFromCenter(lat, lon);
       cursor.position.x = meter.x;
-      cursor.position.z = - meter.y;
+      cursor.position.z = - meter.y * self.terrain.elevationScale + self.elevationOffset;
       cursor.position.y = elev;
     };
 
 
-    var sight = {
-      theta: 0, phi: 15, radious: 5000,
-      lookAt: new THREE.Vector3()
-    };
-    var mouseDown = {};
 
     function update(scene) {
+
+      var cursor = $r.get('o:cursor');
+      cursor.rotation.y = cursor.rotation.y + rad(3);
+
       var camera = $r.get('c:camera');
 
       if (input.isMousePress()) {
@@ -509,8 +520,8 @@
           var eye = new THREE.Vector3().subVectors( camera.position, sight.lookAt );
           var objectUp = new THREE.Vector3();
           var pan = new THREE.Vector3();
-          pan.copy(eye).cross(camera.up).setLength(delta.x);
-          pan.add(objectUp.copy(camera.up).setLength(delta.y));
+          pan.copy(eye).cross(camera.up).setLength(delta.x * Math.max(1, sight.radious / 1000));
+          pan.add(objectUp.copy(camera.up).setLength(delta.y * Math.max(1, sight.radious / 1000)));
 
           sight.lookAt.copy( mouseDown.sight.lookAt ).add(pan);
 

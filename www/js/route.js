@@ -22,57 +22,58 @@ angular.module('elevation.route', [])
   };
 })
 
-.factory('apiUrls', function() {
-  // API proxy for browser testing.
-  if (!window.cordova) {
-    return {
-      routes:    'http://localhost:3333/routes',
-      elevation: 'http://localhost:3333/elevations'
-    };
-  } else {
-    return {
-      routes:    'https://maps.googleapis.com/maps/api/directions/json',
-      elevation: 'https://maps.googleapis.com/maps/api/elevation/json'
-    };
-  }
-})
+.provider('Routes', function() {
+  var url = 'https://maps.googleapis.com/maps/api/directions/json';
 
-.factory('Routes', function($http, apiUrls) {
-  function search(from, to) {
-    var params = {
-      origin: from,
-      destination: to,
-      sensor: false
-    };
-    return $http.get(apiUrls.routes, { params: params })
-      .then(function(response) {
-        return response.data.routes[0];
-      });
-  }
+  this.setUrl = function(newUrl) {
+    url = newUrl;
+  };
 
-  return {
-    search: search
+  this.$get = function($http) {
+    return {
+      search: search
+    };
+
+    function search(from, to) {
+      var params = {
+        origin: from,
+        destination: to,
+        sensor: false
+      };
+      return $http.get(url, { params: params })
+        .then(function(response) {
+          return response.data.routes[0];
+        });
+    }
   };
 })
 
-.factory('Elevations', function($http, $log, apiUrls) {
-  function search(points) {
-    var locations = points.map(function(point) {
-      return [point.lat, point.lng].join(',');
-    }).join('|');
-    var params = {
-      locations: locations
-    };
-    $log.debug('locations length:', locations.length, 'points:', points.length);
-    $log.debug(locations);
-    return $http.get(apiUrls.elevation, { params: params })
-      .then(function(response) {
-        return response.data;
-      });
-  }
+.provider('Elevations', function() {
+  var url = 'https://maps.googleapis.com/maps/api/elevation/json';
 
-  return {
-    search: search
+  this.setUrl = function(newUrl) {
+    url = newUrl;
+  };
+
+  this.$get = function($http, $log) {
+    return {
+      search: search
+    };
+
+    function search(points) {
+      var locations = points.map(function(point) {
+        return [point.lat, point.lng].join(',');
+      }).join('|');
+      var params = {
+        locations: locations
+      };
+      $log.debug('locations length:', locations.length, 'points:', points.length);
+      $log.debug(locations);
+      return $http.get(url, { params: params })
+        .then(function(response) {
+          return response.data;
+        });
+    }
   };
 })
 
@@ -137,7 +138,7 @@ angular.module('elevation.route', [])
         polyline.setMap(map);
 
         var bounds = createBounds(route.bounds);
-        map.panToBounds(bounds);
+        map.fitBounds(bounds);
       }
 
       function addMarker(latlng) {
@@ -312,11 +313,12 @@ angular.module('elevation.route', [])
   };
 })
 
-.directive('evAutocomplete', function($log) {
+.directive('evAutocomplete', function($log, $timeout, $window) {
   return {
     restrict: 'A',
     require: '?ngModel',
     link: function(scope, element, attrs, ngModel) {
+      $log.info('autocomplete');
       var autocomplete = new google.maps.places.Autocomplete(element[0]);
       google.maps.event.addListener(autocomplete, 'place_changed', function() {
         // getPlace()'s result has inconsistent structure.
@@ -324,6 +326,28 @@ angular.module('elevation.route', [])
         var address = element.prop('value')
         ngModel.$setViewValue(address);
       });
+
+      hack();
+
+      function hack() {
+        var containers = $window.document.querySelectorAll('.pac-container')
+        if (!containers || containers.length === 0) {
+          // Wait for pac-container to appear.
+          $timeout(hack, 500);
+          return;
+        }
+        containers = angular.element(containers);
+        containers.attr('data-tap-disabled', 'true');
+        containers.on('click', onClick);
+        containers.on('mousedown', onClick);
+      }
+
+      function onClick(e) {
+        element[0].blur();
+        e.stopPropagation();
+        e.preventDefault();
+      }
     }
   };
+
 });
