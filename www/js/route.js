@@ -131,7 +131,7 @@ angular.module('elevation.route', [])
         polyline.setMap(map);
 
         var bounds = createBounds(route.bounds);
-        map.panToBounds(bounds);
+        map.fitBounds(bounds);
       }
 
       function addMarker(latlng) {
