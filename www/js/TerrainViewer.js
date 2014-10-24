@@ -282,9 +282,16 @@
     var self = this;
     var $r = new Resources();
     var input = new Input(container);
+    var sight = {
+      theta: 0, phi: 15, radious: 50000,
+      lookAt: new THREE.Vector3()
+    };
+    var mouseDown = {};
+
 
     this.setup = function() {
       this.initResources();
+      sight.radious = Math.max(self.terrain.width, self.terrain.height) / 2 + 100,
       this.draw();
     };
 
@@ -348,8 +355,8 @@
       $r.register('c:camera', function() {
         var tr = self.terrain;
         var camera = new THREE.PerspectiveCamera( 45,
-        window.innerWidth / window.innerHeight,
-        1, Math.max(tr.width, tr.height) + 5000 );
+            window.innerWidth / window.innerHeight,
+            1, Math.max(10000, Math.max(tr.width, tr.height) + 5000) );
         camera.position.y = 200;
         return camera;
       });
@@ -482,11 +489,6 @@
     };
 
 
-    var sight = {
-      theta: 0, phi: 15, radious: 5000,
-      lookAt: new THREE.Vector3()
-    };
-    var mouseDown = {};
 
     function update(scene) {
 
