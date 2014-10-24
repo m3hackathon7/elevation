@@ -38,6 +38,11 @@ angular.module('elevation.terrain', [])
           return;
         }
 
+        if (viewer) {
+          viewer.cleanUp();
+          viewer = null;
+        }
+
         var bounds = addMargin(scope.route.bounds);
         $log.debug('Bounds', scope.route.bounds, bounds);
 

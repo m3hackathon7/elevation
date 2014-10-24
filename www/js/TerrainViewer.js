@@ -73,6 +73,15 @@
       return (this.current.isMouseDown && !this.previous.isMouseDown);
     };
 
+    // イベント割当
+    var self = this;
+    self.listeners = [];
+    self.cleanUp = function() {
+      this.listeners.forEach(function(removeListener) {
+        removeListener();
+      });
+    };
+
     // イベントへのリスナ割当を行う
     function on(type, func) {
       var elm = container;
@@ -81,10 +90,12 @@
       }
       elm.addEventListener(
           type, func, false);
+
+      self.listeners.push(function() {
+        elm.removeEventListener(type, func, false);
+      });
     }
 
-    // イベント割当
-    var self = this;
     on('mousedown', function(e){
       console.log('mousedown');
       event.preventDefault();
@@ -283,6 +294,13 @@
       };
     };
 
+    this.isAlive = true;
+    this.listeners = [];
+    this.cleanUp = function() {
+      input.cleanUp();
+      this.isAlive = false;
+      container.innerHTML = '';
+    };
 
     var self = this;
     var $r = new Resources();
@@ -460,7 +478,9 @@
       var self = this;
       function render(renderer, scene) {
         requestAnimationFrame(function() {
-          render(renderer, scene);
+          if (self.isAlive) {
+            render(renderer, scene);
+          }
         });
 
         update(scene);
