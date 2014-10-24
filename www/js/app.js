@@ -73,29 +73,23 @@ angular.module('elevation', [
     });
   };
 
-  $cordovaGeolocation.getCurrentPosition()
-    .then(function(position) {
-      $log.debug('current location', position);
-      self.currentPosition = position;
-    }, function(error) {
+  var watchID = $cordovaGeolocation.watchPosition({
+    frequency : 10000,
+    timeout : 5000,
+    enableHighAccuracy: true
+  });
+  watchID.promise.then(function()  { /* Not  used */ },
+    function(error) {
       $log.error(error);
-      $ionicPopup.alert({
-        title: 'Error',
-        template: error.toString()
-      });
-      self.currentPosition = null;
+    }, function(position) {
+      self.position = position;
     });
 
   self.setCurrentLocation = function(fromOrTo) {
-    Location.currentPosition()
-      .then(function(position) {
-        var latlng = [position.latitude, position.longitude].join(',');
-        if (fromOrTo === 'from') {
-          self.from = latlng;
-        } else if (fromOrTo === 'to') {
-          self.to = latlng;
-        }
-      });
+    if (self.position) {
+      var current = self.position.coords;
+      self[fromOrTo] = current.latitude + ',' + current.longitude;
+    }
   };
 })
 

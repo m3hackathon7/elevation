@@ -89,8 +89,8 @@ angular.module('elevation.route', [])
   return {
     restrict: 'E',
     scope: {
-      center: '=',
-      route: '='
+      route: '=',
+      position: '='
     },
     link: function(scope, element, attrs) {
       var polyline;
@@ -101,24 +101,31 @@ angular.module('elevation.route', [])
         zoom: 14,
         mapTypeId: google.maps.MapTypeId.ROADMAP
       });
-      // Map information retention.
-      self.map = map;
 
-      scope.$watch('center', function() {
-        if (scope.center) {
-          moveMap(scope.center);
-        }
-      });
       scope.$watch('route', function() {
         if (scope.route && scope.route.legs) {
           showRoute(scope.route);
         }
       });
+      scope.$watch('position', function(newValue, oldValue) {
+        if (scope.position) {
+          var latlng = positionToLatLng(scope.position);
+          if (!oldValue) {
+            // 初回だけ現在地を中心にする
+            map.panTo(latlng);
+            marker = addMarker(latlng);
+          } else {
+            marker.setPosition(latlng);
+          }
+        }
+      })
 
       function moveMap(position) {
-        var latlng = positionToLatLng(position);
-        map.panTo(latlng);
-        addMarker(latlng);
+        if (position) {
+          var latlng = positionToLatLng(position);
+          map.panTo(latlng);
+          addMarker(latlng);
+        }
       }
 
       function showRoute(route) {
