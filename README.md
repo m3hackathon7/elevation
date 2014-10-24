@@ -1,3 +1,7 @@
+# Route7
+
+![アイコン](icon.png)
+
 Ionic を使った Cordova アプリです。ひとまず、ルート検索結果の標高を表示します。
 
 ![ルート検索](screenshot-search.png)
