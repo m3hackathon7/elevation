@@ -52,7 +52,7 @@ angular.module('elevation.terrain', [])
 
         var terrainPromises = {
           imageUrl: getMapImage(bounds),
-          coordGrid: getElevations(bounds, rows, cols),
+          coordGrid: getElevations(bounds, cols, rows),
           route: fillRouteElevation(getRoute(scope.route))
         };
         $q.all(terrainPromises)
