@@ -89,10 +89,11 @@ angular.module('elevation', [
   self.setCurrentLocation = function(fromOrTo) {
     Location.currentPosition()
       .then(function(position) {
-        if (fromOrTo == 'from') {
-          self.from = position.latitude + ',' + position.longitude;
-        } else if (fromOrTo == 'to') {
-          self.to = position.latitude + ',' + position.longitude;
+        var latlng = [position.latitude, position.longitude].join(',');
+        if (fromOrTo === 'from') {
+          self.from = latlng;
+        } else if (fromOrTo === 'to') {
+          self.to = latlng;
         }
       });
   };

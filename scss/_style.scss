@@ -21,3 +21,14 @@
   stroke-width: 1px;
   shape-rendering: crisp-edges;
 }
+
+// Enable Google Maps Autocomplete on ionic's popup.
+.popup-open {
+  .pac-container {
+    pointer-events: auto;
+    // TODO: Not sure if this is neccessary.
+    * {
+      pointer-events: auto;
+    }
+  }
+}
