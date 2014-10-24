@@ -306,11 +306,12 @@ angular.module('elevation.route', [])
   };
 })
 
-.directive('evAutocomplete', function($log) {
+.directive('evAutocomplete', function($log, $timeout, $window) {
   return {
     restrict: 'A',
     require: '?ngModel',
     link: function(scope, element, attrs, ngModel) {
+      $log.info('autocomplete');
       var autocomplete = new google.maps.places.Autocomplete(element[0]);
       google.maps.event.addListener(autocomplete, 'place_changed', function() {
         // getPlace()'s result has inconsistent structure.
@@ -318,6 +319,28 @@ angular.module('elevation.route', [])
         var address = element.prop('value')
         ngModel.$setViewValue(address);
       });
+
+      hack();
+
+      function hack() {
+        var containers = $window.document.querySelectorAll('.pac-container')
+        if (!containers || containers.length === 0) {
+          // Wait for pac-container to appear.
+          $timeout(hack, 500);
+          return;
+        }
+        containers = angular.element(containers);
+        containers.attr('data-tap-disabled', 'true');
+        containers.on('click', onClick);
+        containers.on('mousedown', onClick);
+      }
+
+      function onClick(e) {
+        element[0].blur();
+        e.stopPropagation();
+        e.preventDefault();
+      }
     }
   };
+
 });
