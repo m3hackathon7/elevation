@@ -14,13 +14,23 @@ angular.module('elevation.terrain', [])
   return {
     restrict: 'E',
     scope: {
-      route: '='
+      route: '=',
+      position: '='
     },
     link: function(scope, element, attrs) {
       element.css({
         width: '100%',
         height: '600px',
         display: 'block'
+      });
+
+      var viewer;
+
+      scope.$watch('position', function(newValue, oldValue) {
+        if (!viewer || !self.position) {
+          return;
+        }
+        viewer.setCurrentPosition(newValue.coords.latitude, newValue.coords.longitude);
       });
 
       scope.$watch('route', function(newValue, oldValue) {
@@ -44,7 +54,7 @@ angular.module('elevation.terrain', [])
           .then(function(terrain) {
             $log.debug('Let us view terrain!');
             $log.debug('Route:', terrain.route);
-            var viewer = new TerrainViewer(element[0]);
+            viewer = new TerrainViewer(element[0]);
             viewer.setTerrain(terrain.imageUrl,
                               bounds.northeast.lng,
                               bounds.southwest.lng,
@@ -52,6 +62,9 @@ angular.module('elevation.terrain', [])
                               bounds.northeast.lat);
             viewer.setRoute(terrain.route, 50);
             viewer.setCoordGrid(terrain.coordGrid, rows, cols, 3);
+            if (scope.position) {
+              viewer.setCurrentPosition(scope.position.coords.latitude, scope.position.coords.longitude);
+            }
             viewer.setup();
           });
       });

@@ -269,9 +269,14 @@
       this.elevationOffset = elevationOffset || this.elevationOffset;
     };
 
+    this.currentPosition = { x: 0, y: 0 };
+    this.setCurrentPosition = function(lat, lon) {
+      this.currentPosition = this.relativeFromCenter(lat, lon);
+    }
+
     // 中心点からの相対位置をメートルで取得
-    this.relativeFromCenter = function(lat, log) {
-      var meter = coordToMeter(lat, log);
+    this.relativeFromCenter = function(lat, lon) {
+      var meter = coordToMeter(lat, lon);
       return {
         x: meter.x - this.terrain.center.x,
         y: meter.y - this.terrain.center.y
@@ -494,6 +499,8 @@
 
       var cursor = $r.get('o:cursor');
       cursor.rotation.y = cursor.rotation.y + rad(3);
+      cursor.position.x = self.currentPosition.x;
+      cursor.position.z = -self.currentPosition.y;
 
       var camera = $r.get('c:camera');
 
