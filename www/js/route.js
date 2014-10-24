@@ -115,7 +115,9 @@ angular.module('elevation.route', [])
             map.panTo(latlng);
             marker = addMarker(latlng);
           } else {
-            marker.setPosition(latlng);
+            if (marker) {
+              marker.setPosition(latlng);
+            }
           }
         }
       })

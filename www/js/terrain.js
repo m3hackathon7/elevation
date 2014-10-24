@@ -38,8 +38,8 @@ angular.module('elevation.terrain', [])
           return;
         }
 
-        // TODO: Add some margin.
-        var bounds = scope.route.bounds;
+        var bounds = addMargin(scope.route.bounds);
+        $log.debug('Bounds', scope.route.bounds, bounds);
 
         // Get the best out of the API limit!
         var rows = 21;
@@ -66,10 +66,29 @@ angular.module('elevation.terrain', [])
               viewer.setCurrentPosition(scope.position.coords.latitude, scope.position.coords.longitude);
             }
             viewer.setup();
+          }, function(errors) {
+            $log.error(errors);
           });
       });
     }
   };
+
+  function addMargin(bounds) {
+    $log.debug('Adding margin', bounds);
+    var ratio = 0.05;
+    var latDiff = bounds.northeast.lat - bounds.southwest.lat;
+    var lngDiff = bounds.northeast.lng - bounds.southwest.lng;
+    return {
+      southwest: {
+        lat: bounds.southwest.lat - latDiff * ratio,
+        lng: bounds.southwest.lng - lngDiff * ratio
+      },
+      northeast: {
+        lat: bounds.northeast.lat + latDiff * ratio,
+        lng: bounds.northeast.lng + lngDiff * ratio
+      }
+    };
+  }
 
   function getMapImage(bounds) {
     return MapImageService.getMapImage(bounds)
